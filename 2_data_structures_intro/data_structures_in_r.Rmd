@@ -8,6 +8,8 @@
 
 ```{r}
 # Add your photo here
+![Concept_Map_2](https://github.com/CallieStephenson/CS-MBIO-612/commit/3b3e50b929e45d4fccff00d476f9e05824a44eca)
+
 ```
 
 #### Question 1
@@ -151,5 +153,30 @@ nrow(airquality) - nrow(airquality_no_na)
 
 ```{r}
 # Write your answer here
+#find months without Solar.R
+missing_Solar.R <- is.na(airquality$Solar.R)
+airquality[missing_Solar.R,]
+
+#fix may
+solar.r_may <- subset(airquality, Month==5)
+mean_may <- mean(solar_r_may, na.rm = TRUE)
+solar.r_may$Solar.R[is.na(solar.r_may$Solar.R)]<-mean_may
+solar.r_may
+
+#fix august
+solar.r_august <- subset(airquality, Month==8)
+mean_august <- mean(solar_r_august, na.rm = TRUE)
+solar.r_august$Solar.R[is.na(solar.r_august$Solar.R)]<-mean_august
+
+#put it back together
+june <- subset(airquality, Month == 6)
+july <- subset(airquality, Month == 7)
+sept <- subset(airquality, Month == 9)
+q7_airquality <- rbind(solar.r_may, june, july, solar.r_august, sept)
+
+#displayed for you
+head(q7_airquality)
+
+
 ```
 
