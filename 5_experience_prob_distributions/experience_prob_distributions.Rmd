@@ -84,6 +84,9 @@ get_all_perms <- function(size){
 number_diseased <- function(p,n)
 {p*n}
 number_diseased(p=0.43, n=340)
+#now I tried it through rbinom
+occurances <- rbinom(340, 1, 0.43)
+sum(occurances)
 ```
 
 ### Q4
