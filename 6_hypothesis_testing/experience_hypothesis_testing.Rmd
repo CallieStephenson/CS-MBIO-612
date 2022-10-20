@@ -1,0 +1,165 @@
+```{r}
+library(tidyverse)
+```
+
+Let's use the code provided below to generate a dataset representing two populations, each sampled from a Guassian with a specific population mean. Here I am generating only 5 samples
+
+```{r}
+set.seed(110)
+data_1 = tibble(measure=rnorm(5, 10, 1))
+data_1$site_name <- 'Site 1'
+data_2 = tibble(measure=rnorm(5, 12, 1))
+data_2$site_name <- 'Site 2'
+complete_data = rbind(data_1, data_2)
+complete_data
+```
+
+* I compute the mean of the dataset above using the following code:
+  * feel free to deconstruct the code to see what each chunk does.
+
+```{r}
+mean(complete_data[complete_data$site_name == "Site 1", ]$measure)
+mean(complete_data[complete_data$site_name == "Site 2", ]$measure)
+```
+
+* Use the `tapply` function instead of the code above to compute the means samples from "Site 1" and those from site 2
+  * See tapply for help if needed.
+
+```{r}
+# Write your code here
+tapply(complete_data$measure,complete_data$site_name,mean)
+```
+
+Q.2 
+
+* Use the bootstrapping-procedure covered in class to assess whether there is a statistically significant difference between the data in `Site 1` and that in `Site 2`.
+
+Make sure you follow the approach discussed in class and which consists of:
+
+1. Selecting an appropriate test statistic
+2. Bootstrapping a distribution for the observed statistic under the null hypothesis
+3. Deciding whether to accept or reject the null based on the probability of the null
+4. provide a p-value to support your decision.
+
+```{r}
+set.seed(110)
+data_1 = tibble(measure=rnorm(40, 10, 1))
+data_1$site_name <- 'Site 1'
+data_2 = tibble(measure=rnorm(40, 13, 1))
+data_2$site_name <- 'Site 2'
+complete_data = rbind(data_1, data_2)
+```
+
+
+#### Q2.0 
+
+Complete the following by describing the null and the alternative hypotheses we are testing here.
+
+```{r}
+### Write your answer here
+#null hypothesis is that the two distributions are actually the same distribution
+#alternative is that the two distributions are different
+#we know because we built these distributions that the distributions are both normal with the same standard deviation but different means.
+```
+
+#### Q.2.1 
+
+Produce a graph similar the one below (geom_density) display the distributions. If you're using the same seed as mine, your graph will look exactly the same as the one below 
+
+![](https://www.dropbox.com/s/rz5jxm84kk8ac1m/dist.png?dl=1)
+
+```{r}
+# write your code here
+ggplot(complete_data, aes(x=measure, fill=site_name)) + 
+  geom_density()+xlim(6,16)
+```
+
+Q2.2 Select a proper test statistic and produce a distribution of the statistic under the null hypothesis. Plot the data as both a histogram and density curves. Your graph may look like this.
+
+![](https://www.dropbox.com/s/3jarqg9swneai0r/mean_under_null.png?dl=1)
+
+```{r}
+# Write your code here
+#I use the same code in the reading with some modifications to create a function that puts both datasets together, randomly splits them, and then subtracts the mean of one random data from the other
+background_distribution_creator = function(x, y){
+     x <- data_1$measure
+     y <- data_2$measure
+     concat_data = c(x, y)
+     len_concat_data = length(concat_data)
+     shuffled_data = sample(concat_data)
+     new_data_1 = shuffled_data[1:40]
+     new_data_2 = shuffled_data[41:len_concat_data]
+     mean(new_data_1) - mean(new_data_2)}
+mean_under_null = replicate(1000, background_distribution_creator(data_1, data_2))
+
+ggplot()+
+  geom_histogram(aes(mean_under_null, y=..density..), bins =30, alpha=0.2, color="black") + 
+  geom_density(aes(mean_under_null), bw=0.2, size=1.5) + 
+  xlim(-3, 3)
+```
+
+####  Q2.3. 
+
+Calculate and plot the observed statistic on the graph you created in Q.2.2. 
+
+```{r}
+ggplot()+
+    geom_histogram(aes(mean_under_null, y=..density..), bins =30, alpha=0.2, color="black") +
+    geom_density(aes(mean_under_null), bw=0.2, size=1.5) + 
+     xlim(-3, 3) +
+     geom_point(aes(mean(data_1$measure)-mean(data_2$measure), 0), size=5, color = "red")
+
+```
+#### Q2.4 
+#compute the p-vlaue of the observed statistic under the null. What do you conclude about the hypotheses you enunciated in Q
+```{r}
+t.test(data_1$measure, data_2$measure, )
+#p is less than 0.05, so I would reject the null and say these are two different distributions
+```
+```
+
+#### Q.3 
+
+* The proportion of the of _P. lobata_, _M. capitata_ and _P. mendrina_ at a site X are c(0.60, 0.19, 0.21).
+* You surveyed site Y with different environmental conditions and obtains the following proportions for the three corals (0.61, 0.19, 0.20). Use the multinomial non-parametric hypotheses test to assess whether the proportions obtained at sites X and Y are statistically different.
+
+
+Although not explicitly required, your test should cover all the steps in Q2, i.e. appropriate graph(s) when possible, test statistics, and conclusion.
+
+#Our null hypothesis is that the proportions at the sites are not statistically different
+#Our alternative hypothesis is that the sites are statistically different
+```
+
+#### Q.3 
+```{r}
+#Our null hypothesis is that the proportions at the sites are not statistically different
+#Our alternative hypothesis is that the sites are statistically different
+species <- c('PLO', 'PLO', 'MCA', 'MCA', 'PME', 'PME')
+ratio <- c(0.6, 0.61, 0.19, 0.19, 0.21, 0.20)
+site <- c('x','y','x','y','x','y')
+coral_data <- tibble(species, ratio, site)
+
+subtract_abs = function(x){
+    abs(x[1] - x[2])
+}
+
+observed_difference <- sum(tapply(coral_data$ratio, coral_data$species, subtract_abs))/2
+
+building_multinorm_distribution=function(){
+true_proportions = c(0.6, 0.19, 0.21)
+sample_proportions = rmultinom(1, 200, prob=c(0.6, 0.19, 0.21))/200
+sample_tvd = sum(abs(true_proportions- sample_proportions))/2
+sample_tvd
+ }
+tvds = replicate(1000, building_multinorm_distribution())
+
+ggplot()+ 
+     geom_histogram(aes(tvds, ..density..), bins = 15) +
+     geom_point(aes(observed_difference, 0), size=5, color="red")
+```
+```{r}
+p_value = sum(tvds > observed_difference)  / length(tvds)
+p_value
+#p value is > 0.05 so we do not reject null
+```
+```
