@@ -6,6 +6,13 @@ date: "2022-12-01"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#add libraries
+library(gdata)
+library(reshape)
+library(tidyverse)
+library(ggplot2)
+#add data
+raw_data <- read.csv("https://raw.githubusercontent.com/CallieStephenson/CS-MBIO-612/main/Final_Proj_CS_JG/HI_ONLY_NOAA_PACIFIC_RAMP_FISH_SPC_2010_2017_SCI_DATA_MBIO612.csv")
 ```
 ## Chapter 1: Dataset Proposal
 #Part 1: Tidy Data
@@ -17,11 +24,14 @@ Each observation must have its own row.
 Each value must have its own cell.
 
 ```{r Tidy Data}
-#add libraries
-library(gdata)
-library(reshape)
-#add data
-raw_data <- read.csv("https://raw.githubusercontent.com/CallieStephenson/CS-MBIO-612/main/Final_Proj_CS_JG/CRCP_Reef_Fish_Surveys_Hawaii_FOR_JG_CS_MBIO612_FINAL_PROJ.csv")
+#now we only want data from instantaneous (I) and noninstantaneous (N) observations
+wd<-subset(raw_data, (raw_data$OBS_TYPE =="I"|raw_data$OBS_TYPE =="N"))
+#and we only want to look at surveys from habitats with less than 50% sand
+wd<-subset(wd, wd$SAND < 50.01)
+#if we want to look at areas with high coral cover only
+hard_cc <- subset(wd, wd$HARD_CORAL > 49.99)
+#lastly, we want to focus on surveys that took place in less than 18 m
+wd<-subset(wd, wd$DEPTH_M < 18.01)
 ```
 ## Chapter 1: Dataset Proposal
 ## Part 2: Clean Data
@@ -38,7 +48,9 @@ plot(pressure)
 At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
 
 ```{r cars}
-summary(cars)
+#This shows by island how much hard coral was at each site in the subset
+ggplot(data = wd) + 
++     geom_point(mapping = aes(x = ISLAND, y = HARD_CORAL), color = "blue")
 ```
 ## Chapter 2: Final Project
 #Part 1: Data Wrangling
