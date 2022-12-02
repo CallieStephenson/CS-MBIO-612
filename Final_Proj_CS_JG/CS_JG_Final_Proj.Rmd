@@ -29,7 +29,7 @@ wd<-subset(raw_data, (raw_data$OBS_TYPE =="I"|raw_data$OBS_TYPE =="N"))
 #and we only want to look at surveys from habitats with less than 50% sand
 wd<-subset(wd, wd$SAND < 50.01)
 #if we want to look at areas with high coral cover only
-hard_cc <- subset(wd, wd$HARD_CORAL > 49.99)
+high_cc <- subset(wd, wd$HARD_CORAL > 49.99)
 #lastly, we want to focus on surveys that took place in less than 18 m
 wd<-subset(wd, wd$DEPTH_M < 18.01)
 ```
@@ -48,9 +48,9 @@ plot(pressure)
 At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
 
 ```{r cars}
-#This shows by island how much hard coral was at each site in the subset
-ggplot(data = wd) + 
-+     geom_point(mapping = aes(x = ISLAND, y = HARD_CORAL), color = "blue")
+#This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover
+ggplot(data = high_cc) + 
+     geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
 ```
 ## Chapter 2: Final Project
 #Part 1: Data Wrangling
