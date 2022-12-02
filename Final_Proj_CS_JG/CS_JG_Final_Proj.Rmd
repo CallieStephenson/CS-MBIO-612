@@ -1,0 +1,60 @@
+---
+title: "CS_JG_MBIO612_Final_Proj"
+output: pdf_document
+date: "2022-12-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Chapter 1: Dataset Proposal
+#Part 1: Tidy Data
+
+At least 5 commands to tidy data
+
+```{r cars}
+summary(cars)
+```
+
+## Part 2: Clean Data
+
+At least five R commands to clean your data
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+## Part 3: Data Visualizations
+At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
+
+```{r cars}
+summary(cars)
+```
+## Chapter 2: Final Project
+#Part 1: Data Wrangling
+
+Common issues encountered when dealing with this type of data. Consider missing values; can you impute or should you drop them? Data may not be in the correct format, such as site names that need to be standardized or data that needs to be combined from two different files
+```{r cars}
+summary(cars)
+```
+## Chapter 2: Final Project
+#Part 2: Exploratory data analysis
+
+Useful visualizations for gaining a quick overview of the data. Such visualizations are typically perfect for detecting any residual anomalies in the data, or for simply observing any trends or differences between groups or samples
+```{r cars}
+summary(cars)
+```
+## Chapter 2: Final Project
+#Part 3: Analysis and/or modeling
+
+What types of analyses are common in this domain? Asking someone who specializes in this type of analysis is the easiest way to answer this question
+```{r cars}
+summary(cars)
+```
+## Chapter 2: Final Project
+#Part 4: Insight communication
+
+Using appropriate data visualization to summarize your results. Once again, I suggest consulting a colleague who is familiar with the types of visualization used with the data you are using.
+```{r cars}
+summary(cars)
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
