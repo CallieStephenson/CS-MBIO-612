@@ -32,6 +32,7 @@ wd<-subset(wd, wd$SAND < 50.01)
 high_cc <- subset(wd, wd$HARD_CORAL > 49.99)
 #lastly, we want to focus on surveys that took place in less than 18 m
 wd<-subset(wd, wd$DEPTH_M < 18.01)
+
 ```
 ## Chapter 1: Dataset Proposal
 ## Part 2: Clean Data
@@ -42,15 +43,79 @@ No missing values
 No impossible values
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+########Our chief questions with this dataset were: 
+#How does coral cover impact species richness or biodiversity?
+#How does depth impact species richness or biodiversity?
+#Is there overall more species in the NWHI than in the MHI
+#Are there more sharks in the NWHI than in the MHI
+#*have not done yet*Are there more herbivores in the NWHI than in the MHI
+###########
+#To answer these questions, we created 3 Data Frames
+#The first we made using lapply
+#To show diversity in coding, we made a second using a for loop to display overall biomass for each survey
+#A lot of the columns were not useful for us here, we made one data frame for Species Richness (using lapply) and another for Overall Biomass (using a for loop)
+#Here is Species Richness using lapply:
+Richness_by_Depth_and_Year <- data.frame( Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Island=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$ISLAND[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Depth=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$MAX_DEPTH_M[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Year=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$OBS_YEAR[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Species_Richness=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){length(unique(raw_data$SPECIES[raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x]]))})))
+
+#######
+#And here is a for loop to create Biomass for each survey:
+raw_data$BiomassPerFish=raw_data$LW_A*((raw_data$SIZE_TL_CM*raw_data$LENGTH_CONVERSION_FACTOR)^raw_data$LW_B)
+raw_data$BiomassPerObs=raw_data$BiomassPerFish*raw_data$COUNT
+
+Biomass_for_Survey=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA)
+
+for(i in 1:length(unique(raw_data$SITE))){
+  Biomass_for_Survey=rbind(Biomass_for_Survey,c(unique(raw_data$SITE)[i],sum(raw_data$BiomassPerObs[which(raw_data$SITE==unique(raw_data$SITE)[i])]),raw_data$ISLAND[which(raw_data$SITE==unique(raw_data$SITE)[i])][1],raw_data$REGION[which(raw_data$SITE==unique(raw_data$SITE)[i])][1],raw_data$OBS_YEAR[which(raw_data$SITE==unique(raw_data$SITE)[i])][1]))
+}
+Biomass_for_Survey=Biomass_for_Survey[-1,]
+Biomass_for_Survey$Total_Biomass <- as.numeric(Biomass_for_Survey$Total_Biomass)
+
+#Then this for loop makes an average chart that can be used in a barchart
+##I BROKE THIS CODE DO NOT LOOK AT IT
+AvgBiomassIslandYear=data.frame(Island=NA, Region=NA, Biomass=NA)
+rm(i)
+for(i in 1:length(unique(Biomass_for_Survey$Island))){
+  AvgBiomassIslandYear=rbind(AvgBiomassIslandYear,c(unique(Biomass_for_Survey$Island)[i], (Biomass_for_Survey$Region)[i],mean(as.numeric(Biomass_for_Survey$Total_Biomass[Biomass_for_Survey$Island==unique(Biomass_for_Survey$Island)[i]]))))
+}
+
+AvgBiomassIslandYear=AvgBiomassIslandYear[-1,]
+AvgBiomassIslandYear$Biomass=as.numeric(AvgBiomassIslandYear$Biomass)
+
+
+#####
+#Lastly, looking just at shark observations
+Sharks=c("Carcharhinus amblyrhynchos","Carcharhinus galapagensis","Carcharhinus melanopterus","Triaenodon obesus","Sphyrna lewini")
+
+SharkDF=raw_data[which(raw_data$TAXONNAME %in% Sharks),]
 ```
 ## Part 3: Data Visualizations
 At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
 
-```{r cars}
+```{data vis}
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover
 ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
+
+####################
+# A quick boxblot of species richness by island
+Richness_by_Island <- ggplot(Richness_by_Island_and_Year,aes(x = Island, y = Species_Richness)) + geom_boxplot ()
+
+# A quick point of species richness by island
+Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year,aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
+
+# A quick bar chart of biomass by island
+Biomass_by_Island <- ggplot(AvgBiomassIslandYear,aes(x = island, y = biomass)) + geom_col ()+ theme(axis.text.x=element_text(angle=90,hjust=1))
+
+# A quick boxblot of biomass by island
+Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot ()
+##SHOWS INSANE OUTLIERS
+
+##################
+## Sharks in MHI vs NWHI
+Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ REGION)
+# LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
+##################
+
 ```
 ## Chapter 2: Final Project
 #Part 1: Data Wrangling
