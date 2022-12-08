@@ -42,6 +42,9 @@ Clean data:
 No missing values
 No impossible values
 
+To clean our data, Jess and I created two data frames based off the information we wanted to look at from the larger dataset. The code below makes one dataframe for Biomass found at each survey, and species richness of each survey. We also subsetted this data for shark-specific data analysis (though we could easily switch this to any other group if Jess would like to).
+
+Then, as some values were missing Depth information, these needed to be excluded from analysis.
 ```{r pressure, echo=FALSE}
 ########Our chief questions with this dataset were: 
 #How does coral cover impact species richness or biodiversity?
@@ -61,19 +64,11 @@ Richness_by_Depth_and_Year <- data.frame( Region=unlist(lapply(c(1:length(unique
 #And here is a for loop to create Biomass for each survey:
 raw_data$BiomassPerFish=raw_data$LW_A*((raw_data$SIZE_TL_CM*raw_data$LENGTH_CONVERSION_FACTOR)^raw_data$LW_B)
 raw_data$BiomassPerObs=raw_data$BiomassPerFish*raw_data$COUNT
-
-Biomass_for_Survey=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA)
-
-for(i in 1:length(unique(raw_data$SITE))){
-  Biomass_for_Survey=rbind(Biomass_for_Survey,c(unique(raw_data$SITE)[i], sum(raw_data$BiomassPerObs[which(raw_data$SITE==unique(raw_data$SITE)[i])]), raw_data$ISLAND[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$REGION[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$OBS_YEAR[which(raw_data$SITE==unique(raw_data$SITE)[i])][1]))
-}
-Biomass_for_Survey=Biomass_for_Survey[-1,]
-Biomass_for_Survey$Total_Biomass <- as.numeric(Biomass_for_Survey$Total_Biomass)
 #
-Biomass_for_Survey_Depth=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA,Depth=NA)
+Biomass_for_Survey=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA,Depth=NA)
 
 for(i in 1:length(unique(raw_data$SITE))){
-  Biomass_for_Survey_Depth=rbind(Biomass_for_Survey_Depth,c(unique(raw_data$SITE)[i], sum(raw_data$BiomassPerObs[which(raw_data$SITE==unique(raw_data$SITE)[i])]), raw_data$ISLAND[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$REGION[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$OBS_YEAR[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$DEPTH_M[which(raw_data$SITE==unique(raw_data$SITE)[i])][1]))
+  Biomass_for_Survey=rbind(Biomass_for_Survey,c(unique(raw_data$SITE)[i], sum(raw_data$BiomassPerObs[which(raw_data$SITE==unique(raw_data$SITE)[i])]), raw_data$ISLAND[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$REGION[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$OBS_YEAR[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$DEPTH_M[which(raw_data$SITE==unique(raw_data$SITE)[i])][1]))
 }
 Biomass_for_Survey=Biomass_for_Survey[-1,]
 Biomass_for_Survey$Total_Biomass <- as.numeric(Biomass_for_Survey$Total_Biomass)
@@ -85,13 +80,13 @@ SharkDF=raw_data[which(raw_data$TAXONNAME %in% Sharks),]
 
 #####
 #Looking at shark biomass over time
-Shark_Biomass_for_Survey=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA,Depth=NA)
+Shark_Biomass_per_Survey=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA,Depth=NA,Richness=NA)
 
 for(i in 1:length(unique(SharkDF$SITE))){
-  Shark_Biomass_for_Survey=rbind(Biomass_for_Survey,c(unique(SharkDF$SITE)[i], sum(SharkDF$BiomassPerObs[which(SharkDF$SITE==unique(SharkDF$SITE)[i])]), SharkDF$ISLAND[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$REGION[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$OBS_YEAR[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$DEPTH_M[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1]))
+  Shark_Biomass_per_Survey=rbind(Shark_Biomass_per_Survey,c(unique(SharkDF$SITE)[i], sum(SharkDF$BiomassPerObs[which(SharkDF$SITE==unique(SharkDF$SITE)[i])]), SharkDF$ISLAND[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$REGION[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$OBS_YEAR[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$DEPTH_M[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], length(unique((SharkDF$SPECIES[which(SharkDF$SITE==unique(SharkDF$SITE)[i])])))))
 }
-Shark_Biomass_for_Survey=Shark_Biomass_for_Survey[-1,]
-Shark_Biomass_for_Survey$Total_Biomass <- as.numeric(Shark_Biomass_for_Survey$Total_Biomass)
+Shark_Biomass_per_Survey=Shark_Biomass_per_Survey[-1,]
+Shark_Biomass_per_Survey$Total_Biomass <- as.numeric(Shark_Biomass_per_Survey$Total_Biomass)
 ```
 ## Part 3: Data Visualizations
 At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
