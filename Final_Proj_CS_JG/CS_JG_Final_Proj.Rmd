@@ -182,7 +182,6 @@ gen_sp <- new_data %>% separate(TAXONNAME, c('GENUS', 'SP'))
 
 
 
->>>>>>> 1334c1b41edb8d81a1f82c1b242f62ae8ffc10f4
 ```
 ## Chapter 2: Final Project
 #Part 2: Exploratory data analysis
@@ -203,8 +202,7 @@ Biomass_by_Island
 Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ REGION, scales="free")
 Sharks
 # LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
-=======
-```{r}
+
 ### First, we would want to take a subset of the larger dataframe to create one with just the variables we are exploring. In this case, we are interested in shark density by reef zone. 
 
 #create new dataframe that includes just the shark species and the reef zone they are found in
