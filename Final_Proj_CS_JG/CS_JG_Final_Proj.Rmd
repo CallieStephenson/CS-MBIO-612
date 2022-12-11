@@ -23,13 +23,32 @@ Each variable must have its own column.
 Each observation must have its own row.
 Each value must have its own cell.
 
+NOAA dataset was already pretty tidy, some code is written to untidy the data, and the code following is written to re-tidy the data. This dataset was also very large, so we chose to tidy it by creating new dataframes that included only the information that we needed to run specific analyses and to remove excess clutter. 
+
 ```{r Tidy Data}
+#subset the large dataframe to include only columns we will use for analysis
+new_data <- raw_data[ , ! names(raw_data) %in% c("DATAROWID", "REGION", "SITE", "DIVER", "REPLICATEID", "REP", "HABITAT_CODE", "CURRENT_STRENGTH", "VISIBILITY_M", "MIN_DEPTH_M", "COMPLEXITY", "SUBSTRATE_HEIGHT_0", "SUBSTRATE_HEIGHT_20", "SUBSTRATE_HEIGHT_50", "SUBSTRATE_HEIGHT_100", "SUBSTRATE_HEIGHT_150", "MAX_HEIGHT", "URCHIN_DACOR", "BORING_URCHIN_DACOR", "COMMON_FAMILY", "FAMILY", "CONSUMER_GROUP", "OBS_TYPE")]
+
+#split dataframe so that each row becomes 2 rows, REEF_ZONE and DEPTH_BIN become variables rather than columns
+data_long <- pivot_longer(data = new_data,
+                          cols = c("REEF_ZONE","DEPTH_BIN"))
+
+#place 2 variables into columns side-by-side again to reduce length of dataframe
+data_wide <- pivot_wider(data=data_long)
+
+#reduce the number of sig figs on Latitude to match number of sig figs on Longitude
+new_data[,'LATITUDE']=round(new_data['LATITUDE'],4)
+
+
 #now we only want data from instantaneous (I) and noninstantaneous (N) observations
 wd<-subset(raw_data, (raw_data$OBS_TYPE =="I"|raw_data$OBS_TYPE =="N"))
+
 #and we only want to look at surveys from habitats with less than 50% sand
 wd<-subset(wd, wd$SAND < 50.01)
+
 #if we want to look at areas with high coral cover only
 high_cc <- subset(wd, wd$HARD_CORAL > 49.99)
+
 #lastly, we want to focus on surveys that took place in less than 18 m
 wd<-subset(wd, wd$DEPTH_M < 18.01)
 
@@ -42,9 +61,10 @@ Clean data:
 No missing values
 No impossible values
 
-To clean our data, Jess and I created two data frames based off the information we wanted to look at from the larger dataset. The code below makes one dataframe for Biomass found at each survey, and species richness of each survey. We also subsetted this data for shark-specific data analysis (though we could easily switch this to any other group if Jess would like to).
+To clean our data, we created two data frames based off the information we wanted to look at from the larger dataset. The code below makes one dataframe for Biomass found at each survey, and species richness of each survey. We also subsetted this data for shark-specific data analysis.
 
 Then, as some values were missing Depth information, these needed to be excluded from analysis.
+
 ```{r pressure, echo=FALSE}
 ########Our chief questions with this dataset were: 
 #How does coral cover impact species richness or biodiversity?
@@ -114,6 +134,7 @@ Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass
 ## Sharks in MHI vs NWHI
 Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ REGION)
 # LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
+
 ##################
 
 ```
@@ -122,14 +143,59 @@ Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + th
 
 Common issues encountered when dealing with this type of data. Consider missing values; can you impute or should you drop them? Data may not be in the correct format, such as site names that need to be standardized or data that needs to be combined from two different files
 ```{r cars}
-summary(cars)
+### The dataset we used had some NA's in the depth column. If depth was going to be used in one of our analyses, we could remove the rows from the dataset that had NA's for depth by using the following code: 
+
+#drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
+data_depth <- new_data %>%
+               drop_na(MAX_DEPTH_M)
+
+### Other issues that may arise using this type of data is having two variables in the same column. The NOAA dataset had both genus and species in the same column. If we wanted those in separate columns we would use the code below:
+gen_sp <- new_data %>% separate(TAXONNAME, c('GENUS', 'SP'))
+
+
+
 ```
 ## Chapter 2: Final Project
 #Part 2: Exploratory data analysis
 
 Useful visualizations for gaining a quick overview of the data. Such visualizations are typically perfect for detecting any residual anomalies in the data, or for simply observing any trends or differences between groups or samples
-```{r cars}
-summary(cars)
+```{r}
+### First, we would want to take a subset of the larger dataframe to create one with just the variables we are exploring. In this case, we are interested in shark density by reef zone. 
+
+#create new dataframe that includes just the shark species and the reef zone they are found in
+reef_zone <- data.frame(data1$REEF_ZONE, data1$SPECIES, data1$TAXONNAME, data1$COUNT)
+reef_zone_sharks <- reef_zone[reef_zone$data1.TAXONNAME %in% c('Carcharhinus amblyrhynchos', 'Carcharhinus galapagensis', 'Carcharhinus melanopterus','Triaenodon obesus','Sphyrna lewini'),] 
+
+#create a bargraph to see the distribution of shark species by reef zone
+ggplot(data = reef_zone_sharks, aes(fill=data1.TAXONNAME, y=data1.COUNT, x=data1.REEF_ZONE)) +
+  geom_bar(position='dodge', stat='identity') +
+  ggtitle('Shark Species Frequency By Reef Location') +
+  xlab('Reef Zone') +
+  ylab('Frequency')
+
+###Additionally, we could create a scatterplot to visualize the trend in total length of a specific shark by depth
+
+depth_df <- data.frame(data_depth$MAX_DEPTH_M, data_depth$TAXONNAME, data_depth$SIZE_TL_CM)
+
+depth_gray_sharks <- depth_df[depth_df$data_depth.TAXONNAME %in% c('Carcharhinus amblyrhynchos'),] 
+
+#plot the data in a scatterplot, the loess line gives us a gray confidence interval band around it
+ggplot(depth_gray_sharks, aes(x=data_depth.MAX_DEPTH_M, y=data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method=loess) +
+  ggtitle('Relationship of Total Length and Depth of Carcharhinus amblyrhynchos') +
+  xlab ('Observation Depth (M)') +
+  ylab ('Shark Total Length (CM)')
+
+##We can see that there is no relationship between depth and total length of Carcharhinus amblyrhynchos. Most points are clustered around the straight trendline and the confidence interval band is narrow, indicating there are likely no outlier values.
+
+###If we create the same plot, but for Sphyrna lewini, we can see that there is an outlier value that pulls the middle of the trendline up so that it is curved. Additionally, the confidence interval band is wide.
+
+depth_hammerhead <- depth_df[depth_df$data_depth.TAXONNAME %in% c('Sphyrna lewini'),] 
+
+ggplot(depth_hammerhead, aes(x=data_depth.MAX_DEPTH_M, y=data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method=loess) +
+  ggtitle('Relationship of Total Length and Depth of Sphyrna lewini') +
+  xlab ('Observation Depth (M)') +
+  ylab ('Shark Total Length (CM)')
+
 ```
 ## Chapter 2: Final Project
 #Part 3: Analysis and/or modeling
