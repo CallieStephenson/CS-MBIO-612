@@ -6,6 +6,13 @@ date: "2022-12-01"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#CALLIE'S NOTES FOR JESS: I think we're in a pretty good place! I can write some code to do some kind of statistical analysis on the data - like 'does region make a significant difference in total biomass/biomass of sharks'. 
+
+#If we want to do more cleaning/tidying/wrangling, I found this in Julie's code that might be handy?
+#JZ: Manually replace the Island name for Pearl & Hermes and French Frigate shoals so they are called the universal "PHR" and "FFS" across datasheets
+#wd<- within(wd, ISLAND[ISLAND == "Pearl & Hermes"] <- "PHR")
+#wd<- within(wd, ISLAND[ISLAND == "French Frigate"] <- "FFS") 
+
 #add libraries
 library(gdata)
 library(reshape)
@@ -13,6 +20,7 @@ library(tidyverse)
 library(ggplot2)
 #add data
 raw_data_1 <- read.csv("https://raw.githubusercontent.com/CallieStephenson/CS-MBIO-612/main/Final_Proj_CS_JG/HI_ONLY_NOAA_PACIFIC_RAMP_FISH_SPC_2010_2017_SCI_DATA_MBIO612.csv")
+#We got this data from a member in our lab who stressed ot us the importance of not using observation types other than Instantaneous (I) and Noninstantaneous (N). Though this dataset should only be SPC (standardized point count) data, some tow surveys were included that could bias biomass estimates.
 raw_data <- subset(raw_data_1, (raw_data_1$OBS_TYPE =="I"|raw_data_1$OBS_TYPE =="N"))
 ```
 ## Chapter 1: Dataset Proposal
@@ -62,9 +70,11 @@ Clean data:
 No missing values
 No impossible values
 
-To clean our data, we created two data frames based off the information we wanted to look at from the larger dataset. The code below makes one dataframe for Biomass found at each survey, and species richness of each survey. We also subsetted this data for shark-specific data analysis.
+To clean our data, we created two data frames based off the information we wanted to look at from the larger dataset. The code below makes one dataframe for Biomass found at each survey, and species richness of each survey. We used lapply and a for loop to show a variety of knowledge. We also subsetted this data for shark-specific data analysis.
 
-Then, as some values were missing Depth information, these needed to be excluded from analysis.
+As some values were missing Depth information, these needed to be excluded from analysis, and we cleaned the data for this.
+
+There are extreme outliers in the biomass data, where there are large observations on dives (20 jacks of 120 cm at French Frigate Shoals) that wildly skew some of the data, and these are removed in some analyses as is relevant. It is important to note that this data had already been extensively QA/QC'd and we do not expect these to be incorrect daapoints, but rather natural processes that are not well captured in the survey design and present as anomalies.
 
 ```{r pressure, echo=FALSE}
 
@@ -80,7 +90,7 @@ Richness_by_Depth_and_Year <- data.frame( Region=unlist(lapply(c(1:length(unique
 At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
 
 ```{data vis}
-#This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover
+#This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover. This seeks to validate the survey design - there should be no correlation between the two variables.
 ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
 
@@ -88,10 +98,17 @@ ggplot(data = high_cc) +
 # A quick boxblot of species richness by island
 Richness_by_Island <- ggplot(Richness_by_Island_and_Year,aes(x = Island, y = Species_Richness)) + geom_boxplot ()
 
-# A quick point of species richness by island
-Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year,aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
+####################
+# A quick boxblot of species richness by region. We believe from Toonen et al 2010 that the NWHI are reproductively separate from the MHI, and wanted to see the overall difference in richness between the two.
+Richness_by_Island <- ggplot(Richness_by_Island_and_Year,aes(x = Region, y = Species_Richness)) + geom_boxplot ()
 
 ##################
+# A quick point of species richness by depth
+Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year,aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
+
+###################
+#A Scatterplot of richness over time to look for any trends. Note that the NWHI and MHI experienced a bleaching event from 2014-2015, so we wanted to see if this might have a broad impact on species richenss 
+Richness_over_time <- ggplot(Richness_by_Depth_and_Year, aes(x=Year, y =Species_Richness)) + geom_point()
 
 ```
 ## Chapter 2: Final Project
@@ -106,6 +123,8 @@ library(tidyverse)
 library(ggplot2)
 #add data
 raw_data <- read.csv("https://raw.githubusercontent.com/CallieStephenson/CS-MBIO-612/main/Final_Proj_CS_JG/HI_ONLY_NOAA_PACIFIC_RAMP_FISH_SPC_2010_2017_SCI_DATA_MBIO612.csv")
+#We got this data from a member in our lab who stressed ot us the importance of not using observation types other than Instantaneous (I) and Noninstantaneous (N). Though this dataset should only be SPC (standardized point count) data, some tow surveys were included that could bias biomass estimates.
+raw_data <- subset(raw_data_1, (raw_data_1$OBS_TYPE =="I"|raw_data_1$OBS_TYPE =="N"))
 
 #Here is a for loop to create Biomass for each survey:
 raw_data$BiomassPerFish=raw_data$LW_A*((raw_data$SIZE_TL_CM*raw_data$LENGTH_CONVERSION_FACTOR)^raw_data$LW_B)
@@ -119,7 +138,7 @@ for(i in 1:length(unique(raw_data$SITE))){
 Biomass_for_Survey=Biomass_for_Survey[-1,]
 Biomass_for_Survey$Total_Biomass <- as.numeric(Biomass_for_Survey$Total_Biomass)
 #####
-#Looking just at shark observations
+#Pulling out data for shark-specific analyses
 Sharks=c("Carcharhinus amblyrhynchos","Carcharhinus galapagensis","Carcharhinus melanopterus","Triaenodon obesus","Sphyrna lewini")
 
 SharkDF=raw_data[which(raw_data$TAXONNAME %in% Sharks),]
@@ -140,7 +159,7 @@ Shark_Biomass_per_Survey$Total_Biomass <- as.numeric(Shark_Biomass_per_Survey$To
 At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
 
 ```{data vis}
-#This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover
+#This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover, which shows the sampling design is robust.
 ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
 
@@ -152,10 +171,11 @@ Richness_by_Island <- ggplot(Richness_by_Island_and_Year,aes(x = Island, y = Spe
 Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year,aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
 
 # A quick bar chart of biomass by island
-Biomass_by_Island <- ggplot(AvgBiomassIslandYear,aes(x = island, y = biomass)) + geom_col ()+ theme(axis.text.x=element_text(angle=90,hjust=1))
+Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ Region, scales = "free")
+Biomass_by_Island
 
 # A quick boxblot of biomass by island
-Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot ()
+Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot ()+ theme(axis.text.x=element_text(angle=90,hjust=1))
 ##SHOWS INSANE OUTLIERS
 
 ##################
@@ -171,7 +191,7 @@ Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + th
 
 Common issues encountered when dealing with this type of data. Consider missing values; can you impute or should you drop them? Data may not be in the correct format, such as site names that need to be standardized or data that needs to be combined from two different files
 ```{r cars}
-### The dataset we used had some NA's in the depth column. If depth was going to be used in one of our analyses, we could remove the rows from the dataset that had NA's for depth by using the following code: 
+### The dataset we used had some NA's in the depth column, but with 1898 surveys, there is still strong ability to infer when removing these columns. If depth was going to be used in one of our analyses, we could remove the rows from the dataset that had NA's for depth by using the following code: 
 
 #drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
 data_depth <- new_data %>%
@@ -239,17 +259,18 @@ ggplot(depth_hammerhead, aes(x=data_depth.MAX_DEPTH_M, y=data_depth.SIZE_TL_CM))
   xlab ('Observation Depth (M)') +
   ylab ('Shark Total Length (CM)')
 
->>>>>>> 1334c1b41edb8d81a1f82c1b242f62ae8ffc10f4
+#Jess do you know what this is doing here: ">>>>>>> 1334c1b41edb8d81a1f82c1b242f62ae8ffc10f4"
 ```
 ## Chapter 2: Final Project
 #Part 3: Analysis and/or modeling
 
 What types of analyses are common in this domain? Asking someone who specializes in this type of analysis is the easiest way to answer this question
 ```{Average Biomass for Each Year}
-#Our earlier histograms showed some CRAZY outliers in the Biomass data, where 'outliers' is the biomass outlier values and 'outliers_in_data' tells us which row they come at in the dataframe
+#Our earlier histograms showed some CRAZY outliers in the Biomass data. Here, 'outliers' is the biomass outlier values and 'outliers_in_data' tells us which row they come at in the dataframe
 outliers <- boxplot.stats(Biomass_for_Survey$Total_Biomass)$out
 outliers_in_data <- which(Biomass_for_Survey$Total_Biomass %in% c(outliers))
-#since there are 182 outliers in the 1898 surveys, that's about 1% of the surveys (is this just how outliers works??). We can see this data here:
+
+#since there are 182 outliers in the 1898 surveys, that's about 1% of the surveys (is this just how outliers works??). We can see the outlier data here:
 head(Biomass_for_Survey[outliers_in_data,])
 
 #Average biomasss for each island is something that is common to look at a quick snapshot of trends in biomass over time.
@@ -260,8 +281,6 @@ for(i in 1:length(unique(Biomass_for_Survey$Island))){
 }
 AvgBiomassIslandYear=AvgBiomassIslandYear[-1,]
 AvgBiomassIslandYear$biomass=as.numeric(AvgBiomassIslandYear$biomass)
-
-
 
 #####
 ```
