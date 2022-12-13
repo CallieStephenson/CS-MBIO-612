@@ -138,7 +138,7 @@ raw_data <- raw_data %>%
                drop_na(DEPTH_M)
 
 ### Other issues that may arise using this type of data is having two variables in the same column. The NOAA dataset had both genus and species in the same column. If we wanted those in separate columns we would use the code below:
-gen_sp <- new_data %>% separate(TAXONNAME, c('GENUS', 'SP'))
+gen_sp <- wd %>% separate(TAXONNAME, c('GENUS', 'SP'))
 
 #Here is a for loop to create Biomass for each survey:
 raw_data$BiomassPerFish = raw_data$LW_A*((raw_data$SIZE_TL_CM*raw_data$LENGTH_CONVERSION_FACTOR)^raw_data$LW_B)
@@ -216,12 +216,6 @@ NWHI_Biomass_plot_year <- ggplot(NWHI_Biomass,aes(x = Island, y = Total_Biomass)
 NWHI_Biomass_plot_year
 
 ##################
-## Sharks in MHI vs NWHI
-Sharks_plot <- ggplot(SharkDF, aes(x = ISLAND, y = COUNT, fill = REGION)) + geom_col() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ REGION, scales = "free")
-Sharks_plot
-# LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
-
-##################
 
 # A quick boxblot of biomass by island
 Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ Region, scales = "free")
@@ -250,26 +244,17 @@ ggplot(data = reef_zone_sharks, aes(fill = wd.TAXONNAME, y = wd.COUNT, x = wd.RE
 
 ###Additionally, we could create a scatterplot to visualize the trend in total length of a specific shark by depth
 
-depth_df <- data.frame(data_depth$MAX_DEPTH_M, data_depth$TAXONNAME, data_depth$SIZE_TL_CM)
+depth_df <- data.frame(raw_data$MAX_DEPTH_M, raw_data$TAXONNAME, raw_data$SIZE_TL_CM)
 
-depth_gray_sharks <- depth_df[depth_df$data_depth.TAXONNAME %in% c('Carcharhinus amblyrhynchos'),] 
+depth_gray_sharks <- depth_df[depth_df$raw_data.TAXONNAME %in% c('Carcharhinus amblyrhynchos'),] 
 
 #plot the data in a scatterplot, the loess line gives us a gray confidence interval band around it
-ggplot(depth_gray_sharks, aes(x = data_depth.MAX_DEPTH_M, y = data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method = loess) +
+ggplot(depth_gray_sharks, aes(x = raw_data.MAX_DEPTH_M, y = raw_data.SIZE_TL_CM)) + geom_point() + geom_smooth(method = loess) +
   ggtitle('Relationship of Total Length and Depth of Carcharhinus amblyrhynchos') +
   xlab ('Observation Depth (M)') +
   ylab ('Shark Total Length (CM)')
 
-##We can see that there is no relationship between depth and total length of Carcharhinus amblyrhynchos. Most points are clustered around the straight trendline and the confidence interval band is narrow, indicating there are likely no outlier values.
-
-###If we create the same plot, but for Sphyrna lewini, we can see that there is an outlier value that pulls the middle of the trendline up so that it is curved. Additionally, the confidence interval band is wide.
-
-depth_hammerhead <- depth_df[depth_df$data_depth.TAXONNAME %in% c('Sphyrna lewini'), ] 
-
-ggplot(depth_hammerhead, aes(x = data_depth.MAX_DEPTH_M, y = data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method = loess) +
-  ggtitle('Relationship of Total Length and Depth of Sphyrna lewini') +
-  xlab ('Observation Depth (M)') +
-  ylab ('Shark Total Length (CM)')
+##We can see that there is not a strong relationship between depth and total length of Carcharhinus amblyrhynchos. Most points are clustered around the trendline, however we notice a few possible outliers that lie outside of the gray confidence interval band.
 
 
 ```
