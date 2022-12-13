@@ -151,6 +151,8 @@ for(i in 1:length(unique(raw_data$SITE))){
 }
 Biomass_for_Survey = Biomass_for_Survey[-1, ]
 Biomass_for_Survey$Total_Biomass <- as.numeric(Biomass_for_Survey$Total_Biomass)
+Biomass_for_Survey$Year <- as.numeric(Biomass_for_Survey$Year)
+Biomass_for_Survey$Depth <- as.numeric(Biomass_for_Survey$Depth)
 #####
 #Pulling out data for shark-specific analyses
 
@@ -168,10 +170,10 @@ for(i in 1:length(unique(SharkDF$SITE))){
 Shark_Biomass_per_Survey = Shark_Biomass_per_Survey[-1, ]
 Shark_Biomass_per_Survey$Total_Biomass <- as.numeric(Shark_Biomass_per_Survey$Total_Biomass)
 ```
-<<<<<<< HEAD
-=======
-## Part 3: Data Visualizations
-At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
+## Chapter 2: Final Project
+#Part 2: Exploratory data analysis
+
+Useful visualizations for gaining a quick overview of the data. Such visualizations are typically perfect for detecting any residual anomalies in the data, or for simply observing any trends or differences between groups or samples
 
 ```{data vis}
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover, which shows the sampling design is robust.
@@ -195,7 +197,7 @@ Biomass_by_Island
 Biomass_by_Island_manually_changed_y <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ Region, scales = "free") + coord_cartesian(ylim = c(0, 400000))
 Biomass_by_Island_manually_changed_y
 
-#If we wanted to quickly see the MHI, which have less crazy outliers
+#If we wanted to quickly see the MHI, which has less crazy outliers
 MHI_Biomass <- subset(Biomass_for_Survey, (Biomass_for_Survey$Region == "MHI"))
 MHI_Biomass_plot <- ggplot(MHI_Biomass,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 MHI_Biomass_plot
@@ -204,6 +206,15 @@ MHI_Biomass_plot
 MHI_Biomass_Year <- ggplot(MHI_Biomass,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1))+ facet_grid(. ~ Year, scales = "free")
 MHI_Biomass_Year
 
+#And, to be fair, here is the same in the NWHI
+NWHI_Biomass <- subset(Biomass_for_Survey, (Biomass_for_Survey$Region == "NWHI"))
+NWHI_Biomass_plot <- ggplot(NWHI_Biomass,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+NWHI_Biomass_plot
+
+#NWHI Biomass over time
+NWHI_Biomass_plot_year <- ggplot(NWHI_Biomass,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ Year, scales = "free")
+NWHI_Biomass_plot_year
+
 ##################
 ## Sharks in MHI vs NWHI
 Sharks_plot <- ggplot(SharkDF, aes(x = ISLAND, y = COUNT, fill = REGION)) + geom_col() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ REGION, scales = "free")
@@ -211,15 +222,6 @@ Sharks_plot
 # LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
 
 ##################
-
-```
-## Chapter 2: Final Project
-#Part 2: Exploratory data analysis
-
-Useful visualizations for gaining a quick overview of the data. Such visualizations are typically perfect for detecting any residual anomalies in the data, or for simply observing any trends or differences between groups or samples
-<<<<<<< HEAD
-```{r}
-#These visualizations just make sure that no outliers are in the data
 
 # A quick boxblot of biomass by island
 Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ Region, scales = "free")
@@ -276,23 +278,107 @@ ggplot(depth_hammerhead, aes(x = data_depth.MAX_DEPTH_M, y = data_depth.SIZE_TL_
 
 What types of analyses are common in this domain? Asking someone who specializes in this type of analysis is the easiest way to answer this question
 ```{Average Biomass for Each Year}
-#Our earlier histograms showed some CRAZY outliers in the Biomass data. Here, 'outliers' is the biomass outlier values and 'outliers_in_data' tells us which row they come at in the dataframe
+#Our earlier boxplot showed some CRAZY outliers in the Biomass data. Here, 'outliers' is the biomass outlier values and 'outliers_in_data' tells us which row they come at in the dataframe
 outliers <- boxplot.stats(Biomass_for_Survey$Total_Biomass)$out
 outliers_in_data <- which(Biomass_for_Survey$Total_Biomass %in% c(outliers))
 
 #since there are 182 outliers in the 1898 surveys, that's about 1% of the surveys (is this just how outliers works??). We can see the outlier data here:
 head(Biomass_for_Survey[outliers_in_data,])
 
-#Average biomasss for each island is something that is common to look at a quick snapshot of trends in biomass over time.
-AvgBiomassIslandYear=data.frame(island=NA,biomass=NA)
+#A version of the data without outliers is here:
+Biomass_for_Survey_no_outliers <- Biomass_for_Survey[-which(Biomass_for_Survey$Total_Biomass %in% c(outliers)),]
+
+#which makes the same boxplot from earlier look like this:
+Biomass_by_Island_no_out <- ggplot(Biomass_for_Survey_no_outliers,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ Region, scales = "free")
+Biomass_by_Island_no_out
+
+#Making a linear regression on biomass to see whether depth or year matters more
+lm_model_biomass <- lm (Total_Biomass~Year + Depth, data = Biomass_for_Survey)
+summary(lm_model_biomass)
+#both are relevant predictors, but the adjusted r-squared is low
+
+##########Average biomass
+#Average biomasss for each island is something that is common to look at a quick snapshot of trends in biomass over time.Years of data collection were each year between 2010, 2011 2012, 2013, 2014, 2015, 2016, but not every island was included every year. (One island that was surveyed every year was Lisianski if we wanted to run something on just one island)
+Biomass_for_Survey_2010 <- subset(Biomass_for_Survey, (Biomass_for_Survey$Year == "2010"))
+Biomass_for_Survey_2011 <- subset(Biomass_for_Survey, (Biomass_for_Survey$Year == "2011"))
+Biomass_for_Survey_2012 <- subset(Biomass_for_Survey, (Biomass_for_Survey$Year == "2012"))
+Biomass_for_Survey_2013 <- subset(Biomass_for_Survey, (Biomass_for_Survey$Year == "2013"))
+Biomass_for_Survey_2014 <- subset(Biomass_for_Survey, (Biomass_for_Survey$Year == "2014"))
+Biomass_for_Survey_2015 <- subset(Biomass_for_Survey, (Biomass_for_Survey$Year == "2015"))
+
+#2010 
+AvgBiomassIslandYear_2010=data.frame(island=NA,biomass=NA)
 rm(i)
-for(i in 1:length(unique(Biomass_for_Survey$Island))){
-  AvgBiomassIslandYear=rbind(AvgBiomassIslandYear,c(unique(Biomass_for_Survey$Island)[i],mean(as.numeric(Biomass_for_Survey$Total_Biomass[Biomass_for_Survey$Island==unique(Biomass_for_Survey$Island)[i]]))))
+for(i in 1:length(unique(Biomass_for_Survey_2010$Island))){
+  AvgBiomassIslandYear_2010=rbind(AvgBiomassIslandYear,c( unique(Biomass_for_Survey_2010$Island)[i], mean(as.numeric(Biomass_for_Survey_2010$Total_Biomass[Biomass_for_Survey_2010$Island==unique(Biomass_for_Survey_2010$Island)[i]]))))
 }
-AvgBiomassIslandYear=AvgBiomassIslandYear[-1,]
-AvgBiomassIslandYear$biomass=as.numeric(AvgBiomassIslandYear$biomass)
+AvgBiomassIslandYear_2010=AvgBiomassIslandYear_2010[-1,]
+AvgBiomassIslandYear_2010$biomass=as.numeric(AvgBiomassIslandYear_2010$biomass)
+AvgBiomassIslandYear_2010$Year <- '2010'
 
+#2011
+AvgBiomassIslandYear_2011=data.frame(island=NA,biomass=NA)
+rm(i)
+for(i in 1:length(unique(Biomass_for_Survey_2011$Island))){
+  AvgBiomassIslandYear_2011=rbind(AvgBiomassIslandYear,c( unique(Biomass_for_Survey_2011$Island)[i], mean(as.numeric(Biomass_for_Survey_2011$Total_Biomass[Biomass_for_Survey_2011$Island==unique(Biomass_for_Survey_2011$Island)[i]]))))
+}
+AvgBiomassIslandYear_2011=AvgBiomassIslandYear_2011[-1,]
+AvgBiomassIslandYear_2011$biomass=as.numeric(AvgBiomassIslandYear_2011$biomass)
+AvgBiomassIslandYear_2011$Year <- '2011'
 
+#2012
+AvgBiomassIslandYear_2012=data.frame(island=NA,biomass=NA)
+rm(i)
+for(i in 1:length(unique(Biomass_for_Survey_2012$Island))){
+  AvgBiomassIslandYear_2012=rbind(AvgBiomassIslandYear,c( unique(Biomass_for_Survey_2012$Island)[i], mean(as.numeric(Biomass_for_Survey_2012$Total_Biomass[Biomass_for_Survey_2012$Island==unique(Biomass_for_Survey_2012$Island)[i]]))))
+}
+AvgBiomassIslandYear_2012=AvgBiomassIslandYear_2012[-1,]
+AvgBiomassIslandYear_2012$biomass=as.numeric(AvgBiomassIslandYear_2012$biomass)
+AvgBiomassIslandYear_2012$Year <- '2012'
+
+#2013
+AvgBiomassIslandYear_2013=data.frame(island=NA,biomass=NA)
+rm(i)
+for(i in 1:length(unique(Biomass_for_Survey_2013$Island))){
+  AvgBiomassIslandYear_2013=rbind(AvgBiomassIslandYear,c( unique(Biomass_for_Survey_2013$Island)[i], mean(as.numeric(Biomass_for_Survey_2013$Total_Biomass[Biomass_for_Survey_2013$Island==unique(Biomass_for_Survey_2013$Island)[i]]))))
+}
+AvgBiomassIslandYear_2013=AvgBiomassIslandYear_2013[-1,]
+AvgBiomassIslandYear_2013$biomass=as.numeric(AvgBiomassIslandYear_2013$biomass)
+AvgBiomassIslandYear_2013$Year <- '2013'
+
+#2014
+AvgBiomassIslandYear_2014=data.frame(island=NA,biomass=NA)
+rm(i)
+for(i in 1:length(unique(Biomass_for_Survey_2014$Island))){
+  AvgBiomassIslandYear_2014=rbind(AvgBiomassIslandYear,c( unique(Biomass_for_Survey_2014$Island)[i], mean(as.numeric(Biomass_for_Survey_2014$Total_Biomass[Biomass_for_Survey_2014$Island==unique(Biomass_for_Survey_2014$Island)[i]]))))
+}
+AvgBiomassIslandYear_2014=AvgBiomassIslandYear_2014[-1,]
+AvgBiomassIslandYear_2014$biomass=as.numeric(AvgBiomassIslandYear_2014$biomass)
+AvgBiomassIslandYear_2014$Year <- '2014'
+
+#2015
+AvgBiomassIslandYear_2015=data.frame(island=NA,biomass=NA)
+rm(i)
+for(i in 1:length(unique(Biomass_for_Survey_2015$Island))){
+  AvgBiomassIslandYear_2015=rbind(AvgBiomassIslandYear,c( unique(Biomass_for_Survey_2015$Island)[i], mean(as.numeric(Biomass_for_Survey_2015$Total_Biomass[Biomass_for_Survey_2015$Island==unique(Biomass_for_Survey_2015$Island)[i]]))))
+}
+AvgBiomassIslandYear_2015=AvgBiomassIslandYear_2015[-1,]
+AvgBiomassIslandYear_2015$biomass=as.numeric(AvgBiomassIslandYear_2015$biomass)
+AvgBiomassIslandYear_2015$Year <- '2015'
+
+##PUT HER TOGETHER:
+AvgBiomassIslandYear <- rbind(AvgBiomassIslandYear_2010, AvgBiomassIslandYear_2011, AvgBiomassIslandYear_2012, AvgBiomassIslandYear_2013, AvgBiomassIslandYear_2014, AvgBiomassIslandYear_2015)
+
+#Visualize her:
+AvgBiomassIslandYear_bar <-ggplot(data = AvgBiomassIslandYear) + 
+     geom_col(mapping = aes(x = Year, y = biomass, fill = island))
+  AvgBiomassIslandYear_bar
+  
+#Linear Regression on her:
+lm_model_avg_biomass <- lm (biomass~Year, data = AvgBiomassIslandYear)
+summary(lm_model_avg_biomass)
+
+#R-squared is embarassingly low (0.004) and p-value is just so ridiculously high (0.9942)
 
 #####
 #Another type of analyses would be to compare the MHI to NWHI average hard coral cover using a t-test.
@@ -331,8 +417,22 @@ ggplot(coral, aes(REGION, HARD_CORAL)) +
 
 Using appropriate data visualization to summarize your results. Once again, I suggest consulting a colleague who is familiar with the types of visualization used with the data you are using.
 ```{r cars}
-# A quick bar chart of biomass by island
-Biomass_by_Island <- ggplot(AvgBiomassIslandYear,aes(x = island, y = biomass)) + geom_col ()+ theme(axis.text.x=element_text(angle=90,hjust=1))
-Biomass_by_Island
+# A boxplot of biomass by island without large outliers 
+Biomass_by_Island_no_out <- ggplot(Biomass_for_Survey_no_outliers,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ Region, scales = "free")
+Biomass_by_Island_no_out
+
+#Average Biomass:
+Avg_Biomass_by_Island <- ggplot(AvgBiomassIslandYear,aes(x = island, y = biomass)) + geom_col ()+ theme(axis.text.x=element_text(angle=90,hjust=1))
+Avg_Biomass_by_Island
+
+#Average Biomass over time:
+AvgBiomassIslandYear_bar <-ggplot(data = AvgBiomassIslandYear) + 
+     geom_col(mapping = aes(x = Year, y = biomass, fill = island))
+  AvgBiomassIslandYear_bar
+  
+  #Average Biomass over time:
+AvgBiomassIslandYear_box <-AvgBiomassIslandYear_box <-ggplot(data = AvgBiomassIslandYear) + geom_boxplot(mapping = aes(x = Year, y = biomass)) + geom_smooth(aes(x = Year, y = biomass, group=1), formula='y ~ x', method="lm", se=FALSE)
+AvgBiomassIslandYear_box
+
 ```
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
