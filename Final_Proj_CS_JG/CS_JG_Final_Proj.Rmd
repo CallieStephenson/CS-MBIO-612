@@ -183,7 +183,6 @@ high_cc_plot1
 
 ####################
 # A quick boxblot of species richness by island
-Richness_by_Island <- ggplot(Richness_by_Island_and_Year, aes(x = Island, y = Species_Richness)) + geom_boxplot ()
 Richness_by_Island
 
 # A quick point of species richness by island
