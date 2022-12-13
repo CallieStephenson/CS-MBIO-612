@@ -176,6 +176,20 @@ Shark_Biomass_per_Survey$Total_Biomass <- as.numeric(Shark_Biomass_per_Survey$To
 Useful visualizations for gaining a quick overview of the data. Such visualizations are typically perfect for detecting any residual anomalies in the data, or for simply observing any trends or differences between groups or samples
 
 ```{r data vis}
+#Looking for normality in the Biomass data
+is_Biomass_normal <- ggplot(data=Biomass_for_Survey, aes(x=Total_Biomass)) + geom_density(alpha=0.5, fill="lightblue") + geom_vline(aes(xintercept=mean(Total_Biomass)),color="blue", size=0.25)
+is_Biomass_normal
+#It does not look normal...at all. So we can test statistically
+shapiro.test(Biomass_for_Survey$Total_Biomass)
+#The data is not normal. So, most analyses we understand work with normal distributions. The rest of our work with the Biomass data is showing we know how to code, but can not make conclusions for this type of data 
+
+#Looking for normality in the Richness data
+is_Richness_normal <- ggplot(data=Richness_by_Depth_and_Year, aes(x=Species_Richness)) + geom_density(alpha=0.5, fill="lightblue") + geom_vline(aes(xintercept=mean(Species_Richness)),color="blue", size=0.25)
+is_Richness_normal
+#It looks potentially normal. So we can test statistically:
+shapiro.test(Richness_by_Depth_and_Year$Species_Richness)
+#The data is not normal. So, most analyses we understand work with normal distributions. The rest of our work with the Richness data is showing we know how to code, but we can not make conclusions for this type of data 
+
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover, which shows the sampling design is robust.
 high_cc_plot1 <- ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
