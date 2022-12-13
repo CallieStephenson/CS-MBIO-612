@@ -296,17 +296,34 @@ AvgBiomassIslandYear$biomass=as.numeric(AvgBiomassIslandYear$biomass)
 
 
 #####
-#Another type of analyses would be to compare the MHI to NWHI shark density using a t-test to compare the mean number of sharks seen between the two regions.
-#First, we create two new dataframes that include the sharks surveyed in each region.
+#Another type of analyses would be to compare the MHI to NWHI average hard coral cover using a t-test.
+#First, we create two new dataframes that include the coral cover surveyed in each region.
 
-MHIsharks <- subset(Sharks, Sharks$REGION == "MHI")
-NWHIsharks <- subset(Sharks, Sharks$REGION == "NWHI")
+coral <- wd[ , names(wd) %in% c("REGION", "HARD_CORAL")]
+             
+MHIcoral <- subset(coral, coral$REGION == "MHI")
 
-#Then, we run a t-test to compare the mean number of sharks seen per dive in each region.
+NWHIcoral <- subset(coral, coral$REGION == "NWHI")
 
-t.test(MHIsharks$COUNT, NWHIsharks$COUNT, var.equal = FALSE)
+#To investigate the distribution of coral cover in each region we can use the following code:
 
-#There is a significant difference in the number of sharks seen on each dive at the NWHI compared to the MHI (t=-3.9808, df=262, p=8.9e-05)
+hist(MHIcoral$HARD_CORAL)
+hist(NWHIcoral$HARD_CORAL)
+
+#Then, we can run a t-test to compare the mean number of coral cover between the two regions. We assume equal variance because our histograms were similarly distributed.
+
+t.test(MHIcoral$HARD_CORAL, NWHIcoral$HARD_CORAL, var.equal=TRUE)
+
+#The t.test indicates that there is a significant difference in coral cover between regions (t=9.24, df=140119, p=2.2e-16). To visualize the data we can create a barplot of the mean coral cover by region.
+
+
+ggplot(coral, aes(REGION, HARD_CORAL)) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean",
+           fill = "purple") +
+  xlab("Region") +
+  ylab("Average Coral Cover")
 
 #####
 ```
