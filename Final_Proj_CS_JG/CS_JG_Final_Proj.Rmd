@@ -78,8 +78,8 @@ There are extreme outliers in the biomass data, where there are large observatio
 Richness_by_Depth_and_Year <- data.frame( Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Island=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$ISLAND[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Depth=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$MAX_DEPTH_M[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Year=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$OBS_YEAR[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Species_Richness=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){length(unique(raw_data$SPECIES[raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x]]))})))
 
 #Drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
-data_depth <- new_data %>%
-               drop_na(MAX_DEPTH_M)
+Richness_by_Depth_and_Year_no_NA <- Richness_by_Depth_and_Year %>%
+               drop_na(Depth)
 
 ###We also manually replaced the Island name for Pearl & Hermes and French Frigate shoals so they are called the universal "PHR" and "FFS" across datasheets to make the columns easier to read.
 wd <- within(wd, ISLAND[ISLAND == "Pearl & Hermes"] <- "PHR")
@@ -94,25 +94,29 @@ At least five ggplot2 data visualizations that describe your data. You can choos
 
 ```{data vis}
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover. This seeks to validate the survey design - there should be no correlation between the two variables.
-ggplot(data = high_cc) + 
+high_cc_plot <- ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
+high_cc_plot
 
 ####################
 # A quick boxblot of species richness by island
-Richness_by_Island <- ggplot(Richness_by_Island_and_Year, aes(x = Island, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Island <- ggplot(Richness_by_Depth_and_Year_no_NA, aes(x = Island, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Island
 
 ####################
 # A quick boxblot of species richness by region. We believe from Toonen et al 2010 that the NWHI are reproductively separate from the MHI, and wanted to see the overall difference in richness between the two.
-Richness_by_Island <- ggplot(Richness_by_Island_and_Year, aes(x = Region, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Region <- ggplot(Richness_by_Depth_and_Year_no_NA, aes(x = Region, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Region
 
 ##################
 # A quick point of species richness by depth
-Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year, aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
+Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year_no_NA, aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
+Richness_by_Depth
 
 ###################
-#A Scatterplot of richness over time to look for any trends. Note that the NWHI and MHI experienced a bleaching event from 2014-2015, so we wanted to see if this might have a broad impact on species richenss 
-Richness_over_time <- ggplot(Richness_by_Depth_and_Year, aes(x=Year, y =Species_Richness)) + geom_point()
-
+#A boxplot of richness over time to look for any trends. Note that the NWHI and MHI experienced a bleaching event from 2014-2015, so we wanted to see if this might have a broad impact on species richenss. Note that Donovan et al 2018 suggests that decreases in coral cover have a lag effect in species assemblages and biomass.
+Richness_over_time <- ggplot(Richness_by_Depth_and_Year, aes(x=Year, y =Species_Richness, group=Year)) + geom_boxplot()
+Richness_over_time
 ```
 ## Chapter 2: Final Project
 #Part 1: Data Wrangling
@@ -129,6 +133,13 @@ raw_data <- read.csv("https://raw.githubusercontent.com/CallieStephenson/CS-MBIO
 #We got this data from a member in our lab who stressed ot us the importance of not using observation types other than Instantaneous (I) and Noninstantaneous (N). Though this dataset should only be SPC (standardized point count) data, some tow surveys were included that could bias biomass estimates.
 raw_data <- subset(raw_data_1, (raw_data_1$OBS_TYPE =="I"|raw_data_1$OBS_TYPE =="N"))
 
+#Now getting rid of data without depth measurements
+raw_data <- raw_data %>%
+               drop_na(DEPTH_M)
+
+### Other issues that may arise using this type of data is having two variables in the same column. The NOAA dataset had both genus and species in the same column. If we wanted those in separate columns we would use the code below:
+gen_sp <- new_data %>% separate(TAXONNAME, c('GENUS', 'SP'))
+
 #Here is a for loop to create Biomass for each survey:
 raw_data$BiomassPerFish = raw_data$LW_A*((raw_data$SIZE_TL_CM*raw_data$LENGTH_CONVERSION_FACTOR)^raw_data$LW_B)
 raw_data$BiomassPerObs = raw_data$BiomassPerFish*raw_data$COUNT
@@ -143,7 +154,7 @@ Biomass_for_Survey$Total_Biomass <- as.numeric(Biomass_for_Survey$Total_Biomass)
 #####
 #Pulling out data for shark-specific analyses
 
-Sharks <- wd[wd$TAXONNAME %in% c('Carcharhinus amblyrhynchos', 'Carcharhinus galapagensis', 'Carcharhinus melanopterus','Triaenodon obesus','Sphyrna lewini'),] 
+Sharks=c("Carcharhinus amblyrhynchos","Carcharhinus galapagensis","Carcharhinus melanopterus","Triaenodon obesus","Sphyrna lewini")
 
 SharkDF <- wd[which(wd$TAXONNAME %in% Sharks), ]
 
@@ -164,51 +175,42 @@ At least five ggplot2 data visualizations that describe your data. You can choos
 
 ```{data vis}
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover, which shows the sampling design is robust.
-ggplot(data = high_cc) + 
+high_cc_plot1 <- ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
+high_cc_plot1
 
 ####################
 # A quick boxblot of species richness by island
 Richness_by_Island <- ggplot(Richness_by_Island_and_Year, aes(x = Island, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Island
 
 # A quick point of species richness by island
 Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year, aes(x = Depth, y  = Species_Richness, color = Region)) + geom_point ()
+Richness_by_Depth
 
-# A quick bar chart of biomass by island
+# A quick boxplot of biomass by island
 Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ Region, scales = "free")
 Biomass_by_Island
+##This graph shows some crazy outliers, the same graph where the outliers are ... exponged by manually changing the y axis shows many outliers still exist, but allows a better undserstanding of the variability in the dataset:
+Biomass_by_Island_manually_changed_y <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ Region, scales = "free") + coord_cartesian(ylim = c(0, 400000))
+Biomass_by_Island_manually_changed_y
 
-# A quick boxblot of biomass by island
-Biomass_by_Island <- ggplot(Biomass_for_Survey, (x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-##SHOWS INSANE OUTLIERS
+#If we wanted to quickly see the MHI, which have less crazy outliers
+MHI_Biomass <- subset(Biomass_for_Survey, (Biomass_for_Survey$Region == "MHI"))
+MHI_Biomass_plot <- ggplot(MHI_Biomass,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+MHI_Biomass_plot
+
+#To quickly see if this changes over time
+MHI_Biomass_Year <- ggplot(MHI_Biomass,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1))+ facet_grid(. ~ Year, scales = "free")
+MHI_Biomass_Year
 
 ##################
 ## Sharks in MHI vs NWHI
-Sharks <- ggplot(SharkDF, aes(x = ISLAND, y = COUNT, fill = REGION)) + geom_col() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ REGION)
+Sharks_plot <- ggplot(SharkDF, aes(x = ISLAND, y = COUNT, fill = REGION)) + geom_col() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ REGION, scales = "free")
+Sharks_plot
 # LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
 
 ##################
-
-```
-## Chapter 2: Final Project
-#Part 1: Data Wrangling
-
-Common issues encountered when dealing with this type of data. Consider missing values; can you impute or should you drop them? Data may not be in the correct format, such as site names that need to be standardized or data that needs to be combined from two different files
-```{r}
-### The dataset we used had some NA's in the depth column, but with 1898 surveys, there is still strong ability to infer when removing these columns. If depth was going to be used in one of our analyses, we could remove the rows from the dataset that had NA's for depth by using the following code: 
-
-###drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
-data_depth <- new_data %>%
-               drop_na(MAX_DEPTH_M)
-
-### Other issues that may arise using this type of data is having two variables in the same column. The NOAA dataset had both genus and species in the same column. If we wanted those in separate columns we would use the code below:
-gen_sp <- new_data %>% separate(TAXONNAME, c('GENUS', 'SP'))
-
-###We also manually replaced the Island name for Pearl & Hermes and French Frigate shoals so they are called the universal "PHR" and "FFS" across datasheets to make the columns easier to read.
-wd <- within(wd, ISLAND[ISLAND == "Pearl & Hermes"] <- "PHR")
-wd <- within(wd, ISLAND[ISLAND == "French Frigate"] <- "FFS") 
-
-
 
 ```
 ## Chapter 2: Final Project
