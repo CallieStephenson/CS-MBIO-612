@@ -6,9 +6,6 @@ date: "2022-12-01"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#CALLIE'S NOTES FOR JESS: I think we're in a pretty good place! I can write some code to do some kind of statistical analysis on the data - like 'does region make a significant difference in total biomass/biomass of sharks'. 
-
-
 #add libraries
 library(gdata)
 library(reshape)
@@ -78,7 +75,7 @@ There are extreme outliers in the biomass data, where there are large observatio
 ###########
 #For the first section of this project we will focus on species richness
 #A lot of the columns were not useful for us here, we made one data frame for Species Richness (using lapply)
-Richness_by_Depth_and_Year <- data.frame( Region = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$REGION[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Island = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$ISLAND[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Depth = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$MAX_DEPTH_M[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Year = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$OBS_YEAR[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Region = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$REGION[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Species_Richness = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){length(unique(raw_data$SPECIES[raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x]]))})))
+Richness_by_Depth_and_Year <- data.frame( Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Island=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$ISLAND[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Depth=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$MAX_DEPTH_M[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Year=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$OBS_YEAR[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Species_Richness=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){length(unique(raw_data$SPECIES[raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x]]))})))
 
 #Drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
 data_depth <- new_data %>%
