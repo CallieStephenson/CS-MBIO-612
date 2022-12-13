@@ -8,10 +8,6 @@ date: "2022-12-01"
 knitr::opts_chunk$set(echo = TRUE)
 #CALLIE'S NOTES FOR JESS: I think we're in a pretty good place! I can write some code to do some kind of statistical analysis on the data - like 'does region make a significant difference in total biomass/biomass of sharks'. 
 
-#If we want to do more cleaning/tidying/wrangling, I found this in Julie's code that might be handy?
-#JZ: Manually replace the Island name for Pearl & Hermes and French Frigate shoals so they are called the universal "PHR" and "FFS" across datasheets
-#wd<- within(wd, ISLAND[ISLAND == "Pearl & Hermes"] <- "PHR")
-#wd<- within(wd, ISLAND[ISLAND == "French Frigate"] <- "FFS") 
 
 #add libraries
 library(gdata)
@@ -21,7 +17,7 @@ library(ggplot2)
 #add data
 raw_data_1 <- read.csv("https://raw.githubusercontent.com/CallieStephenson/CS-MBIO-612/main/Final_Proj_CS_JG/HI_ONLY_NOAA_PACIFIC_RAMP_FISH_SPC_2010_2017_SCI_DATA_MBIO612.csv")
 #We got this data from a member in our lab who stressed ot us the importance of not using observation types other than Instantaneous (I) and Noninstantaneous (N). Though this dataset should only be SPC (standardized point count) data, some tow surveys were included that could bias biomass estimates.
-raw_data <- subset(raw_data_1, (raw_data_1$OBS_TYPE =="I"|raw_data_1$OBS_TYPE =="N"))
+raw_data <- subset(raw_data_1, (raw_data_1$OBS_TYPE == "I"|raw_data_1$OBS_TYPE == "N"))
 ```
 ## Chapter 1: Dataset Proposal
 #Part 1: Tidy Data
@@ -36,21 +32,22 @@ NOAA dataset was already pretty tidy, some code is written to untidy the data, a
 
 ```{r Tidy Data}
 #subset the large dataframe to include only columns we will use for analysis
-new_data <- raw_data[ , ! names(raw_data) %in% c("DATAROWID", "REGION", "SITE", "DIVER", "REPLICATEID", "REP", "HABITAT_CODE", "CURRENT_STRENGTH", "VISIBILITY_M", "MIN_DEPTH_M", "COMPLEXITY", "SUBSTRATE_HEIGHT_0", "SUBSTRATE_HEIGHT_20", "SUBSTRATE_HEIGHT_50", "SUBSTRATE_HEIGHT_100", "SUBSTRATE_HEIGHT_150", "MAX_HEIGHT", "URCHIN_DACOR", "BORING_URCHIN_DACOR", "COMMON_FAMILY", "FAMILY", "CONSUMER_GROUP", "OBS_TYPE")]
+raw_data <- raw_data[ , ! names(raw_data) %in% c("DATAROWID", "REGION", "SITE", "DIVER", "REPLICATEID", "REP", "HABITAT_CODE", "CURRENT_STRENGTH", "VISIBILITY_M", "MIN_DEPTH_M", "COMPLEXITY", "SUBSTRATE_HEIGHT_0", "SUBSTRATE_HEIGHT_20", "SUBSTRATE_HEIGHT_50", "SUBSTRATE_HEIGHT_100", "SUBSTRATE_HEIGHT_150", "MAX_HEIGHT", "URCHIN_DACOR", "BORING_URCHIN_DACOR", "COMMON_FAMILY", "FAMILY", "CONSUMER_GROUP", "OBS_TYPE")]
 
-#split dataframe so that each row becomes 2 rows, REEF_ZONE and DEPTH_BIN become variables rather than columns
-data_long <- pivot_longer(data = new_data,
+#split dataframe so that each row becomes 2 rows, REEF_ZONE and DEPTH_BIN become variables rather than columns (untidying data)
+data_long <- pivot_longer(data = raw_data,
                           cols = c("REEF_ZONE","DEPTH_BIN"))
 
-#place 2 variables into columns side-by-side again to reduce length of dataframe
-data_wide <- pivot_wider(data=data_long)
+#place 2 variables into columns side-by-side again to reduce length of dataframe (re-tidying data)
+data_wide <- pivot_wider(data = data_long)
 
 #reduce the number of sig figs on Latitude to match number of sig figs on Longitude
-new_data[,'LATITUDE']=round(new_data['LATITUDE'],4)
+raw_data[, 'LATITUDE'] = round(raw_data['LATITUDE'], 4)
 
 
-#now we only want data from instantaneous (I) and noninstantaneous (N) observations
-wd<-subset(raw_data, (raw_data$OBS_TYPE =="I"|raw_data$OBS_TYPE =="N"))
+#The following code creates new dataframes of just the columns we are interested in analyzing. The first includes only data from instantaneous (I) and noninstantaneous (N) observations
+wd <- subset(raw_data_1, (raw_data_1$OBS_TYPE =="I"|raw_data_1$OBS_TYPE =="N"))
+
 
 #and we only want to look at surveys from habitats with less than 50% sand
 wd<-subset(wd, wd$SAND < 50.01)
@@ -70,18 +67,27 @@ Clean data:
 No missing values
 No impossible values
 
-To clean our data, we created two data frames based off the information we wanted to look at from the larger dataset. The code below makes one dataframe for Biomass found at each survey, and species richness of each survey. We used lapply and a for loop to show a variety of knowledge. We also subsetted this data for shark-specific data analysis.
+To clean our data, we created two data frames based off the information we wanted to look at from the larger dataset. The code below makes one dataframe for Biomass found at each survey, and species richness of each survey. We used lapply and a for loop to show a variety of approaches. We also subsetted this data for shark-specific data analysis.
 
 As some values were missing Depth information, these needed to be excluded from analysis, and we cleaned the data for this.
 
-There are extreme outliers in the biomass data, where there are large observations on dives (20 jacks of 120 cm at French Frigate Shoals) that wildly skew some of the data, and these are removed in some analyses as is relevant. It is important to note that this data had already been extensively QA/QC'd and we do not expect these to be incorrect daapoints, but rather natural processes that are not well captured in the survey design and present as anomalies.
+There are extreme outliers in the biomass data, where there are large observations on dives (20 jacks of 120 cm at French Frigate Shoals) that wildly skew some of the data, and these are removed in some analyses as is relevant. It is important to note that this data had already been extensively QA/QC'd and we do not expect these to be incorrect datapoints, but rather natural processes that are not well captured in the survey design and present as anomalies.
 
 ```{r pressure, echo=FALSE}
 
 ###########
-#For the first section of this projet we will focus on species richness
+#For the first section of this project we will focus on species richness
 #A lot of the columns were not useful for us here, we made one data frame for Species Richness (using lapply)
-Richness_by_Depth_and_Year <- data.frame( Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Island=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$ISLAND[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Depth=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$MAX_DEPTH_M[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Year=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$OBS_YEAR[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Region=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){raw_data$REGION[which(raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x])[1]]})), Species_Richness=unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))),function(x){length(unique(raw_data$SPECIES[raw_data$SITEVISITID==unique(raw_data$SITEVISITID)[x]]))})))
+Richness_by_Depth_and_Year <- data.frame( Region = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$REGION[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Island = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$ISLAND[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Depth = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$MAX_DEPTH_M[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Year = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$OBS_YEAR[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Region = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){raw_data$REGION[which(raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x])[1]]})), Species_Richness = unlist(lapply(c(1:length(unique(raw_data$SITEVISITID))), function(x){length(unique(raw_data$SPECIES[raw_data$SITEVISITID == unique(raw_data$SITEVISITID)[x]]))})))
+
+#Drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
+data_depth <- new_data %>%
+               drop_na(MAX_DEPTH_M)
+
+###We also manually replaced the Island name for Pearl & Hermes and French Frigate shoals so they are called the universal "PHR" and "FFS" across datasheets to make the columns easier to read.
+wd <- within(wd, ISLAND[ISLAND == "Pearl & Hermes"] <- "PHR")
+wd <- within(wd, ISLAND[ISLAND == "French Frigate"] <- "FFS") 
+
 
 #######
 ```
@@ -96,15 +102,15 @@ ggplot(data = high_cc) +
 
 ####################
 # A quick boxblot of species richness by island
-Richness_by_Island <- ggplot(Richness_by_Island_and_Year,aes(x = Island, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Island <- ggplot(Richness_by_Island_and_Year, aes(x = Island, y = Species_Richness)) + geom_boxplot ()
 
 ####################
 # A quick boxblot of species richness by region. We believe from Toonen et al 2010 that the NWHI are reproductively separate from the MHI, and wanted to see the overall difference in richness between the two.
-Richness_by_Island <- ggplot(Richness_by_Island_and_Year,aes(x = Region, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Island <- ggplot(Richness_by_Island_and_Year, aes(x = Region, y = Species_Richness)) + geom_boxplot ()
 
 ##################
 # A quick point of species richness by depth
-Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year,aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
+Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year, aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
 
 ###################
 #A Scatterplot of richness over time to look for any trends. Note that the NWHI and MHI experienced a bleaching event from 2014-2015, so we wanted to see if this might have a broad impact on species richenss 
@@ -127,30 +133,31 @@ raw_data <- read.csv("https://raw.githubusercontent.com/CallieStephenson/CS-MBIO
 raw_data <- subset(raw_data_1, (raw_data_1$OBS_TYPE =="I"|raw_data_1$OBS_TYPE =="N"))
 
 #Here is a for loop to create Biomass for each survey:
-raw_data$BiomassPerFish=raw_data$LW_A*((raw_data$SIZE_TL_CM*raw_data$LENGTH_CONVERSION_FACTOR)^raw_data$LW_B)
-raw_data$BiomassPerObs=raw_data$BiomassPerFish*raw_data$COUNT
+raw_data$BiomassPerFish = raw_data$LW_A*((raw_data$SIZE_TL_CM*raw_data$LENGTH_CONVERSION_FACTOR)^raw_data$LW_B)
+raw_data$BiomassPerObs = raw_data$BiomassPerFish*raw_data$COUNT
 #
-Biomass_for_Survey=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA,Depth=NA)
+Biomass_for_Survey = data.frame(Site = NA, Total_Biomass = NA, Island = NA, Region = NA, Year = NA, Depth = NA)
 
 for(i in 1:length(unique(raw_data$SITE))){
-  Biomass_for_Survey=rbind(Biomass_for_Survey,c(unique(raw_data$SITE)[i], sum(raw_data$BiomassPerObs[which(raw_data$SITE==unique(raw_data$SITE)[i])]), raw_data$ISLAND[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$REGION[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$OBS_YEAR[which(raw_data$SITE==unique(raw_data$SITE)[i])][1], raw_data$DEPTH_M[which(raw_data$SITE==unique(raw_data$SITE)[i])][1]))
+  Biomass_for_Survey = rbind(Biomass_for_Survey, c(unique(raw_data$SITE)[i],  sum(raw_data$BiomassPerObs[which(raw_data$SITE == unique(raw_data$SITE)[i])]), raw_data$ISLAND[which(raw_data$SITE == unique(raw_data$SITE)[i])][1], raw_data$REGION[which(raw_data$SITE == unique(raw_data$SITE)[i])][1], raw_data$OBS_YEAR[which(raw_data$SITE == unique(raw_data$SITE)[i])][1], raw_data$DEPTH_M[which(raw_data$SITE == unique(raw_data$SITE)[i])][1]))
 }
-Biomass_for_Survey=Biomass_for_Survey[-1,]
+Biomass_for_Survey = Biomass_for_Survey[-1, ]
 Biomass_for_Survey$Total_Biomass <- as.numeric(Biomass_for_Survey$Total_Biomass)
 #####
 #Pulling out data for shark-specific analyses
-Sharks=c("Carcharhinus amblyrhynchos","Carcharhinus galapagensis","Carcharhinus melanopterus","Triaenodon obesus","Sphyrna lewini")
 
-SharkDF=raw_data[which(raw_data$TAXONNAME %in% Sharks),]
+Sharks <- wd[wd$TAXONNAME %in% c('Carcharhinus amblyrhynchos', 'Carcharhinus galapagensis', 'Carcharhinus melanopterus','Triaenodon obesus','Sphyrna lewini'),] 
+
+SharkDF <- wd[which(wd$TAXONNAME %in% Sharks), ]
 
 #####
 #Looking at shark biomass over time
-Shark_Biomass_per_Survey=data.frame(Site=NA,Total_Biomass=NA,Island=NA,Region=NA,Year=NA,Depth=NA,Richness=NA)
+Shark_Biomass_per_Survey <- data.frame(Site = NA, Total_Biomass = NA, Island = NA, Region = NA, Year = NA, Depth = NA, Richness = NA)
 
 for(i in 1:length(unique(SharkDF$SITE))){
-  Shark_Biomass_per_Survey=rbind(Shark_Biomass_per_Survey,c(unique(SharkDF$SITE)[i], sum(SharkDF$BiomassPerObs[which(SharkDF$SITE==unique(SharkDF$SITE)[i])]), SharkDF$ISLAND[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$REGION[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$OBS_YEAR[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], SharkDF$DEPTH_M[which(SharkDF$SITE==unique(SharkDF$SITE)[i])][1], length(unique((SharkDF$SPECIES[which(SharkDF$SITE==unique(SharkDF$SITE)[i])])))))
+  Shark_Biomass_per_Survey = rbind(Shark_Biomass_per_Survey, c(unique(SharkDF$SITE)[i], sum(SharkDF$BiomassPerObs[which(SharkDF$SITE == unique(SharkDF$SITE)[i])]), SharkDF$ISLAND[which(SharkDF$SITE == unique(SharkDF$SITE)[i])][1], SharkDF$REGION[which(SharkDF$SITE == unique(SharkDF$SITE)[i])][1], SharkDF$OBS_YEAR[which(SharkDF$SITE == unique(SharkDF$SITE)[i])][1], SharkDF$DEPTH_M[which(SharkDF$SITE == unique(SharkDF$SITE)[i])][1],  length(unique((SharkDF$SPECIES[which(SharkDF$SITE == unique(SharkDF$SITE)[i])])))))
 }
-Shark_Biomass_per_Survey=Shark_Biomass_per_Survey[-1,]
+Shark_Biomass_per_Survey = Shark_Biomass_per_Survey[-1, ]
 Shark_Biomass_per_Survey$Total_Biomass <- as.numeric(Shark_Biomass_per_Survey$Total_Biomass)
 ```
 <<<<<<< HEAD
@@ -165,22 +172,22 @@ ggplot(data = high_cc) +
 
 ####################
 # A quick boxblot of species richness by island
-Richness_by_Island <- ggplot(Richness_by_Island_and_Year,aes(x = Island, y = Species_Richness)) + geom_boxplot ()
+Richness_by_Island <- ggplot(Richness_by_Island_and_Year, aes(x = Island, y = Species_Richness)) + geom_boxplot ()
 
 # A quick point of species richness by island
-Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year,aes(x=Depth, y =Species_Richness, color = Region)) + geom_point ()
+Richness_by_Depth <- ggplot(Richness_by_Depth_and_Year, aes(x = Depth, y  = Species_Richness, color = Region)) + geom_point ()
 
 # A quick bar chart of biomass by island
-Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ Region, scales = "free")
+Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ Region, scales = "free")
 Biomass_by_Island
 
 # A quick boxblot of biomass by island
-Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot ()+ theme(axis.text.x=element_text(angle=90,hjust=1))
+Biomass_by_Island <- ggplot(Biomass_for_Survey, (x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ##SHOWS INSANE OUTLIERS
 
 ##################
 ## Sharks in MHI vs NWHI
-Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ REGION)
+Sharks <- ggplot(SharkDF, aes(x = ISLAND, y = COUNT, fill = REGION)) + geom_col() + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + facet_grid(. ~ REGION)
 # LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
 
 ##################
@@ -190,15 +197,19 @@ Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + th
 #Part 1: Data Wrangling
 
 Common issues encountered when dealing with this type of data. Consider missing values; can you impute or should you drop them? Data may not be in the correct format, such as site names that need to be standardized or data that needs to be combined from two different files
-```{r cars}
+```{r}
 ### The dataset we used had some NA's in the depth column, but with 1898 surveys, there is still strong ability to infer when removing these columns. If depth was going to be used in one of our analyses, we could remove the rows from the dataset that had NA's for depth by using the following code: 
 
-#drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
+###drop NAs from depth column, this will remove entire row if depth is an NA, save as new dataframe
 data_depth <- new_data %>%
                drop_na(MAX_DEPTH_M)
 
 ### Other issues that may arise using this type of data is having two variables in the same column. The NOAA dataset had both genus and species in the same column. If we wanted those in separate columns we would use the code below:
 gen_sp <- new_data %>% separate(TAXONNAME, c('GENUS', 'SP'))
+
+###We also manually replaced the Island name for Pearl & Hermes and French Frigate shoals so they are called the universal "PHR" and "FFS" across datasheets to make the columns easier to read.
+wd <- within(wd, ISLAND[ISLAND == "Pearl & Hermes"] <- "PHR")
+wd <- within(wd, ISLAND[ISLAND == "French Frigate"] <- "FFS") 
 
 
 
@@ -208,7 +219,7 @@ gen_sp <- new_data %>% separate(TAXONNAME, c('GENUS', 'SP'))
 
 Useful visualizations for gaining a quick overview of the data. Such visualizations are typically perfect for detecting any residual anomalies in the data, or for simply observing any trends or differences between groups or samples
 <<<<<<< HEAD
-```{r cars}
+```{r}
 #These visualizations just make sure that no outliers are in the data
 
 # A quick boxblot of biomass by island
@@ -223,15 +234,15 @@ Sharks <- ggplot(SharkDF, aes(x=ISLAND, y=COUNT, fill = REGION))+geom_col() + th
 Sharks
 # LOOK AT HOW MANY MORE SHARKS THERE ARE IN THE NWHI
 
-### First, we would want to take a subset of the larger dataframe to create one with just the variables we are exploring. In this case, we are interested in shark density by reef zone. 
+### Now, we want to take a subset of the larger dataframe to create one with just the variables we are exploring. In this case, we are interested in shark density by reef zone. 
 
 #create new dataframe that includes just the shark species and the reef zone they are found in
-reef_zone <- data.frame(data1$REEF_ZONE, data1$SPECIES, data1$TAXONNAME, data1$COUNT)
-reef_zone_sharks <- reef_zone[reef_zone$data1.TAXONNAME %in% c('Carcharhinus amblyrhynchos', 'Carcharhinus galapagensis', 'Carcharhinus melanopterus','Triaenodon obesus','Sphyrna lewini'),] 
+reef_zone <- data.frame(wd$REEF_ZONE, wd$SPECIES, wd$TAXONNAME, wd$COUNT)
+reef_zone_sharks <- reef_zone[reef_zone$wd.TAXONNAME %in% c('Carcharhinus amblyrhynchos', 'Carcharhinus galapagensis', 'Carcharhinus melanopterus','Triaenodon obesus','Sphyrna lewini'),] 
 
 #create a bargraph to see the distribution of shark species by reef zone
-ggplot(data = reef_zone_sharks, aes(fill=data1.TAXONNAME, y=data1.COUNT, x=data1.REEF_ZONE)) +
-  geom_bar(position='dodge', stat='identity') +
+ggplot(data = reef_zone_sharks, aes(fill = wd.TAXONNAME, y = wd.COUNT, x = wd.REEF_ZONE)) +
+  geom_bar(position = 'dodge', stat = 'identity') +
   ggtitle('Shark Species Frequency By Reef Location') +
   xlab('Reef Zone') +
   ylab('Frequency')
@@ -243,7 +254,7 @@ depth_df <- data.frame(data_depth$MAX_DEPTH_M, data_depth$TAXONNAME, data_depth$
 depth_gray_sharks <- depth_df[depth_df$data_depth.TAXONNAME %in% c('Carcharhinus amblyrhynchos'),] 
 
 #plot the data in a scatterplot, the loess line gives us a gray confidence interval band around it
-ggplot(depth_gray_sharks, aes(x=data_depth.MAX_DEPTH_M, y=data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method=loess) +
+ggplot(depth_gray_sharks, aes(x = data_depth.MAX_DEPTH_M, y = data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method = loess) +
   ggtitle('Relationship of Total Length and Depth of Carcharhinus amblyrhynchos') +
   xlab ('Observation Depth (M)') +
   ylab ('Shark Total Length (CM)')
@@ -252,14 +263,14 @@ ggplot(depth_gray_sharks, aes(x=data_depth.MAX_DEPTH_M, y=data_depth.SIZE_TL_CM)
 
 ###If we create the same plot, but for Sphyrna lewini, we can see that there is an outlier value that pulls the middle of the trendline up so that it is curved. Additionally, the confidence interval band is wide.
 
-depth_hammerhead <- depth_df[depth_df$data_depth.TAXONNAME %in% c('Sphyrna lewini'),] 
+depth_hammerhead <- depth_df[depth_df$data_depth.TAXONNAME %in% c('Sphyrna lewini'), ] 
 
-ggplot(depth_hammerhead, aes(x=data_depth.MAX_DEPTH_M, y=data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method=loess) +
+ggplot(depth_hammerhead, aes(x = data_depth.MAX_DEPTH_M, y = data_depth.SIZE_TL_CM)) + geom_point() + geom_smooth(method = loess) +
   ggtitle('Relationship of Total Length and Depth of Sphyrna lewini') +
   xlab ('Observation Depth (M)') +
   ylab ('Shark Total Length (CM)')
 
-#Jess do you know what this is doing here: ">>>>>>> 1334c1b41edb8d81a1f82c1b242f62ae8ffc10f4"
+
 ```
 ## Chapter 2: Final Project
 #Part 3: Analysis and/or modeling
@@ -281,6 +292,21 @@ for(i in 1:length(unique(Biomass_for_Survey$Island))){
 }
 AvgBiomassIslandYear=AvgBiomassIslandYear[-1,]
 AvgBiomassIslandYear$biomass=as.numeric(AvgBiomassIslandYear$biomass)
+
+
+
+#####
+#Another type of analyses would be to compare the MHI to NWHI shark density using a t-test to compare the mean number of sharks seen between the two regions.
+#First, we create two new dataframes that include the sharks surveyed in each region.
+
+MHIsharks <- subset(Sharks, Sharks$REGION == "MHI")
+NWHIsharks <- subset(Sharks, Sharks$REGION == "NWHI")
+
+#Then, we run a t-test to compare the mean number of sharks seen per dive in each region.
+
+t.test(MHIsharks$COUNT, NWHIsharks$COUNT, var.equal = FALSE)
+
+#There is a significant difference in the number of sharks seen on each dive at the NWHI compared to the MHI (t=-3.9808, df=262, p=8.9e-05)
 
 #####
 ```
