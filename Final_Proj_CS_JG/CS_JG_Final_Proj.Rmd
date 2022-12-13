@@ -29,6 +29,7 @@ NOAA dataset was already pretty tidy, some code is written to untidy the data, a
 
 ```{r Tidy Data}
 #subset the large dataframe to include only columns we will use for analysis
+raw_data <- raw_data[ , ! names(raw_data) %in% c("DATAROWID", "DIVER", "REPLICATEID", "REP", "HABITAT_CODE", "CURRENT_STRENGTH", "VISIBILITY_M", "MIN_DEPTH_M", "COMPLEXITY", "SUBSTRATE_HEIGHT_0", "SUBSTRATE_HEIGHT_20", "SUBSTRATE_HEIGHT_50", "SUBSTRATE_HEIGHT_100", "SUBSTRATE_HEIGHT_150", "MAX_HEIGHT", "URCHIN_DACOR", "BORING_URCHIN_DACOR", "COMMON_FAMILY", "FAMILY", "CONSUMER_GROUP", "OBS_TYPE")]
 
 #split dataframe so that each row becomes 2 rows, REEF_ZONE and DEPTH_BIN become variables rather than columns (untidying data)
 data_long <- pivot_longer(data = raw_data,
@@ -91,6 +92,7 @@ wd <- within(wd, ISLAND[ISLAND == "French Frigate"] <- "FFS")
 ## Part 3: Data Visualizations
 At least five ggplot2 data visualizations that describe your data. You can choose any data visualization you deem valuable to understand your data.
 
+```{r data vis}
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover. This seeks to validate the survey design - there should be no correlation between the two variables.
 high_cc_plot <- ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
@@ -120,6 +122,7 @@ Richness_over_time
 #Part 1: Data Wrangling
 
 Common issues encountered when dealing with this type of data. Consider missing values; can you impute or should you drop them? Data may not be in the correct format, such as site names that need to be standardized or data that needs to be combined from two different files
+```{r Data Wrangling}
 #add libraries
 library(gdata)
 library(reshape)
@@ -172,6 +175,7 @@ Shark_Biomass_per_Survey$Total_Biomass <- as.numeric(Shark_Biomass_per_Survey$To
 
 Useful visualizations for gaining a quick overview of the data. Such visualizations are typically perfect for detecting any residual anomalies in the data, or for simply observing any trends or differences between groups or samples
 
+```{r data vis}
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover, which shows the sampling design is robust.
 high_cc_plot1 <- ggplot(data = high_cc) + 
      geom_point(mapping = aes(x = DEPTH_M, y = HARD_CORAL, color = REGION))
@@ -217,6 +221,7 @@ NWHI_Biomass_plot_year
 Biomass_by_Island <- ggplot(Biomass_for_Survey,aes(x = Island, y = Total_Biomass)) + geom_boxplot () + theme(axis.text.x=element_text(angle=90,hjust=1))+ facet_grid(. ~ Region, scales = "free")
 Biomass_by_Island
 
+##SHOWS INSANE POINTS OUTSIDE DISTRIBUTION
 
 ##################
 ## Sharks in MHI vs NWHI
@@ -257,6 +262,7 @@ ggplot(depth_gray_sharks, aes(x = raw_data.MAX_DEPTH_M, y = raw_data.SIZE_TL_CM)
 #Part 3: Analysis and/or modeling
 
 What types of analyses are common in this domain? Asking someone who specializes in this type of analysis is the easiest way to answer this question
+```{r Average Biomass for Each Year}
 #Our earlier boxplot showed some CRAZY outliers in the Biomass data. Here, 'outliers' is the biomass outlier values and 'outliers_in_data' tells us which row they come at in the dataframe
 outliers <- boxplot.stats(Biomass_for_Survey$Total_Biomass)$out
 outliers_in_data <- which(Biomass_for_Survey$Total_Biomass %in% c(outliers))
@@ -289,6 +295,7 @@ Biomass_for_Survey_2015 <- subset(Biomass_for_Survey, (Biomass_for_Survey$Year =
 AvgBiomassIslandYear_2010=data.frame(island=NA,biomass=NA)
 rm(i)
 for(i in 1:length(unique(Biomass_for_Survey_2010$Island))){
+  AvgBiomassIslandYear_2010=rbind(AvgBiomassIslandYear_2010,c( unique(Biomass_for_Survey_2010$Island)[i], mean(as.numeric(Biomass_for_Survey_2010$Total_Biomass[Biomass_for_Survey_2010$Island==unique(Biomass_for_Survey_2010$Island)[i]]))))
 }
 AvgBiomassIslandYear_2010=AvgBiomassIslandYear_2010[-1,]
 AvgBiomassIslandYear_2010$biomass=as.numeric(AvgBiomassIslandYear_2010$biomass)
@@ -298,6 +305,7 @@ AvgBiomassIslandYear_2010$Year <- '2010'
 AvgBiomassIslandYear_2011=data.frame(island=NA,biomass=NA)
 rm(i)
 for(i in 1:length(unique(Biomass_for_Survey_2011$Island))){
+  AvgBiomassIslandYear_2011=rbind(AvgBiomassIslandYear_2011,c( unique(Biomass_for_Survey_2011$Island)[i], mean(as.numeric(Biomass_for_Survey_2011$Total_Biomass[Biomass_for_Survey_2011$Island==unique(Biomass_for_Survey_2011$Island)[i]]))))
 }
 AvgBiomassIslandYear_2011=AvgBiomassIslandYear_2011[-1,]
 AvgBiomassIslandYear_2011$biomass=as.numeric(AvgBiomassIslandYear_2011$biomass)
@@ -307,6 +315,7 @@ AvgBiomassIslandYear_2011$Year <- '2011'
 AvgBiomassIslandYear_2012=data.frame(island=NA,biomass=NA)
 rm(i)
 for(i in 1:length(unique(Biomass_for_Survey_2012$Island))){
+  AvgBiomassIslandYear_2012=rbind(AvgBiomassIslandYear_2012,c( unique(Biomass_for_Survey_2012$Island)[i], mean(as.numeric(Biomass_for_Survey_2012$Total_Biomass[Biomass_for_Survey_2012$Island==unique(Biomass_for_Survey_2012$Island)[i]]))))
 }
 AvgBiomassIslandYear_2012=AvgBiomassIslandYear_2012[-1,]
 AvgBiomassIslandYear_2012$biomass=as.numeric(AvgBiomassIslandYear_2012$biomass)
@@ -316,6 +325,7 @@ AvgBiomassIslandYear_2012$Year <- '2012'
 AvgBiomassIslandYear_2013=data.frame(island=NA,biomass=NA)
 rm(i)
 for(i in 1:length(unique(Biomass_for_Survey_2013$Island))){
+  AvgBiomassIslandYear_2013=rbind(AvgBiomassIslandYear_2013,c( unique(Biomass_for_Survey_2013$Island)[i], mean(as.numeric(Biomass_for_Survey_2013$Total_Biomass[Biomass_for_Survey_2013$Island==unique(Biomass_for_Survey_2013$Island)[i]]))))
 }
 AvgBiomassIslandYear_2013=AvgBiomassIslandYear_2013[-1,]
 AvgBiomassIslandYear_2013$biomass=as.numeric(AvgBiomassIslandYear_2013$biomass)
@@ -325,6 +335,7 @@ AvgBiomassIslandYear_2013$Year <- '2013'
 AvgBiomassIslandYear_2014=data.frame(island=NA,biomass=NA)
 rm(i)
 for(i in 1:length(unique(Biomass_for_Survey_2014$Island))){
+  AvgBiomassIslandYear_2014=rbind(AvgBiomassIslandYear_2014,c( unique(Biomass_for_Survey_2014$Island)[i], mean(as.numeric(Biomass_for_Survey_2014$Total_Biomass[Biomass_for_Survey_2014$Island==unique(Biomass_for_Survey_2014$Island)[i]]))))
 }
 AvgBiomassIslandYear_2014=AvgBiomassIslandYear_2014[-1,]
 AvgBiomassIslandYear_2014$biomass=as.numeric(AvgBiomassIslandYear_2014$biomass)
@@ -334,6 +345,7 @@ AvgBiomassIslandYear_2014$Year <- '2014'
 AvgBiomassIslandYear_2015=data.frame(island=NA,biomass=NA)
 rm(i)
 for(i in 1:length(unique(Biomass_for_Survey_2015$Island))){
+  AvgBiomassIslandYear_2015=rbind(AvgBiomassIslandYear_2015,c( unique(Biomass_for_Survey_2015$Island)[i], mean(as.numeric(Biomass_for_Survey_2015$Total_Biomass[Biomass_for_Survey_2015$Island==unique(Biomass_for_Survey_2015$Island)[i]]))))
 }
 AvgBiomassIslandYear_2015=AvgBiomassIslandYear_2015[-1,]
 AvgBiomassIslandYear_2015$biomass=as.numeric(AvgBiomassIslandYear_2015$biomass)
