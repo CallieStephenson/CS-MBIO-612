@@ -188,7 +188,7 @@ is_Richness_normal <- ggplot(data=Richness_by_Depth_and_Year, aes(x=Species_Rich
 is_Richness_normal
 #It looks potentially normal. So we can test statistically:
 shapiro.test(Richness_by_Depth_and_Year$Species_Richness)
-#The data is not normal. So, most analyses we understand work with normal distributions. The rest of our work with the Richness data is showing we know how to code, but we can not make conclusions for this type of data 
+#The data is not normal. So, most analyses we understand work with normal distributions. The rest of our work with the Richness data is showing we know how to code, but we can not make conclusions for this type of data.
 
 #This shows by depth how much hard coral was at each site in the subset of areas with coral cover >50%, which makes it seem like depth was not a significant factor in coral cover, which shows the sampling design is robust.
 high_cc_plot1 <- ggplot(data = high_cc) + 
